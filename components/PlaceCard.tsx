@@ -2,6 +2,8 @@
 
 import { TripItem, PlaceType } from "@/types";
 import { useMode } from "@/lib/mode";
+import { useSettings } from "@/lib/settings";
+import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
 import PhotoGallery from "./PhotoGallery";
 
 const TYPE_CONFIG: Record<PlaceType, { icon: string; color: string; bg: string; ring: string }> = {
@@ -26,9 +28,19 @@ export default function PlaceCard({
   item, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLast,
 }: Props) {
   const { mode } = useMode();
+  const { settings } = useSettings();
   const isEdit = mode === "edit";
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
+
+  // 営業時間：構造化JSON or 平文テキスト
+  const hoursData = parseHours(item.business_hours);
+  const weekday = settings.start_date ? getWeekday(settings.start_date, item.day) : undefined;
+  const hoursText = hoursData
+    ? formatHoursText(hoursData, weekday)
+    : item.business_hours;
+
+  const isClosed = hoursData && weekday && hoursData.closed.includes(weekday);
 
   const hasSubInfo = item.description || item.business_hours || item.memo;
 
@@ -37,7 +49,7 @@ export default function PlaceCard({
       id={`place-${item.id}`}
       className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden scroll-mt-20"
     >
-      {/* 写真ギャラリー（最上部） */}
+      {/* 写真ギャラリー */}
       <PhotoGallery tripItemId={item.id} editable={isEdit} />
 
       {/* カードヘッダー */}
@@ -65,41 +77,31 @@ export default function PlaceCard({
         {isEdit && (
           <div className="flex flex-col gap-1 flex-shrink-0">
             <div className="flex gap-1">
-              <button
-                onClick={onMoveUp}
-                disabled={isFirst}
-                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors"
-              >▲</button>
-              <button
-                onClick={onMoveDown}
-                disabled={isLast}
-                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors"
-              >▼</button>
+              <button onClick={onMoveUp} disabled={isFirst}
+                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▲</button>
+              <button onClick={onMoveDown} disabled={isLast}
+                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▼</button>
             </div>
             <div className="flex gap-1">
-              <button
-                onClick={onEdit}
-                className="w-7 h-7 rounded-lg bg-sky-light hover:bg-sky/20 flex items-center justify-center text-xs transition-colors"
-              >✏️</button>
-              <button
-                onClick={onDelete}
-                className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-xs transition-colors"
-              >🗑️</button>
+              <button onClick={onEdit}
+                className="w-7 h-7 rounded-lg bg-sky-light hover:bg-sky/20 flex items-center justify-center text-xs transition-colors">✏️</button>
+              <button onClick={onDelete}
+                className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-xs transition-colors">🗑️</button>
             </div>
           </div>
         )}
       </div>
 
-      {/* サブ情報（説明・営業時間・メモ） */}
+      {/* サブ情報 */}
       {hasSubInfo && (
         <div className="px-4 pb-3 space-y-2 border-t border-slate-50 pt-3">
           {item.description && (
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
           )}
-          {item.business_hours && (
-            <div className="flex items-start gap-2 text-sm text-slate-500">
+          {hoursText && (
+            <div className={`flex items-start gap-2 text-sm ${isClosed ? 'text-red-500' : 'text-slate-500'}`}>
               <span className="text-base flex-shrink-0">🕐</span>
-              <span className="leading-relaxed">{item.business_hours}</span>
+              <span className="leading-relaxed">{hoursText}</span>
             </div>
           )}
           {item.memo && (
@@ -112,27 +114,12 @@ export default function PlaceCard({
       )}
 
       {/* マップリンク */}
-      {item.name && (item.maps_url || isEdit) && (
+      {item.name && item.maps_url && (
         <div className="px-4 pb-4">
-          {item.maps_url ? (
-            <a
-              href={item.maps_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-sky font-semibold hover:underline"
-            >
-              <span>📍</span> Googleマップで開く
-            </a>
-          ) : (
-            <a
-              href={`https://maps.google.com/?q=${encodeURIComponent(item.name)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-sky transition-colors"
-            >
-              <span>🔍</span> Googleマップで探す
-            </a>
-          )}
+          <a href={item.maps_url} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-sky font-semibold hover:underline">
+            <span>📍</span> Googleマップで開く
+          </a>
         </div>
       )}
     </div>

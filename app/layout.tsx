@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ModeProvider } from "@/lib/mode";
+import { SettingsProvider } from "@/lib/settings";
 
 export const metadata: Metadata = {
   title: "北海道旅行プラン",
   description: "北海道旅行の旅程管理アプリ",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ja">
       <body className="min-h-screen">
-        <ModeProvider>{children}</ModeProvider>
+        <SettingsProvider>
+          <ModeProvider>{children}</ModeProvider>
+        </SettingsProvider>
       </body>
     </html>
   );

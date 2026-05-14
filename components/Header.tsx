@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
+import { useSettings } from "@/lib/settings";
 import { getClient } from "@/lib/supabase";
-import { TripSettings } from "@/types";
 import { useMode } from "@/lib/mode";
 import HeroSettingsModal from "./HeroSettingsModal";
 
@@ -13,25 +13,12 @@ function publicUrl(path: string) {
 }
 
 export default function Header() {
+  const { settings, refresh } = useSettings();
   const { mode } = useMode();
-  const [settings, setSettings] = useState<TripSettings | null>(null);
   const [editing, setEditing] = useState(false);
-
-  const fetchSettings = useCallback(async () => {
-    const { data } = await getClient()
-      .from("trip_settings")
-      .select("*")
-      .eq("id", 1)
-      .maybeSingle();
-    setSettings((data as TripSettings | null) ?? null);
-  }, []);
-
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
-
-  const heroUrl = settings?.hero_image_path ? publicUrl(settings.hero_image_path) : null;
   const isEdit = mode === "edit";
+
+  const heroUrl = settings.hero_image_path ? publicUrl(settings.hero_image_path) : null;
 
   return (
     <>
@@ -41,7 +28,7 @@ export default function Header() {
           style={
             heroUrl
               ? {
-                  backgroundImage: `linear-gradient(135deg, rgba(91,163,217,0.65) 0%, rgba(155,126,200,0.55) 55%, rgba(91,168,95,0.65) 100%), url(${heroUrl})`,
+                  backgroundImage: `linear-gradient(135deg,rgba(91,163,217,.65) 0%,rgba(155,126,200,.55) 55%,rgba(91,168,95,.65) 100%),url(${heroUrl})`,
                 }
               : undefined
           }
@@ -60,18 +47,15 @@ export default function Header() {
               Hokkaido Trip
             </div>
             <h1 className="text-4xl font-bold mb-3 drop-shadow-sm">
-              🌿 {settings?.title ?? "..."}
+              🌿 {settings.title}
             </h1>
             <p className="text-white/90 text-base font-medium">
-              {settings?.subtitle ?? ""} ・ {settings?.duration_label ?? ""}
+              {settings.subtitle} ・ {settings.duration_label}
             </p>
-            {settings && settings.tags.length > 0 && (
+            {settings.tags.length > 0 && (
               <div className="mt-4 flex gap-3 justify-center flex-wrap">
                 {settings.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium"
-                  >
+                  <span key={tag} className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
                     {tag}
                   </span>
                 ))}
@@ -83,23 +67,18 @@ export default function Header() {
             <button
               onClick={() => setEditing(true)}
               className="absolute top-3 left-3 z-20 h-9 px-3 rounded-full bg-white/30 backdrop-blur-md flex items-center gap-1.5 text-xs font-semibold text-white hover:bg-white/45 transition-colors"
-              title="ヘッダーを編集"
             >
-              <span>⚙️</span>
-              <span>ヘッダー編集</span>
+              <span>⚙️</span> ヘッダー編集
             </button>
           )}
         </div>
       </header>
 
-      {editing && settings && (
+      {editing && (
         <HeroSettingsModal
           settings={settings}
           onClose={() => setEditing(false)}
-          onSaved={(s) => {
-            setSettings(s);
-            setEditing(false);
-          }}
+          onSaved={async () => { await refresh(); setEditing(false); }}
         />
       )}
     </>
