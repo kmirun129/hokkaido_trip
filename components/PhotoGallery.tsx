@@ -6,9 +6,47 @@ import { compressImage } from "@/lib/compress";
 import { PlacePhoto } from "@/types";
 
 const BUCKET = "place-photos";
+const MAX_VISIBLE = 6;
 
 function publicUrl(path: string) {
   return getClient().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+type Layout = { container: string; cells: string[] };
+
+// 枚数別のグリッド構成。空白セルが出ないように調整。
+function getLayout(count: number): Layout {
+  switch (count) {
+    case 1:
+      return { container: 'aspect-[16/10]', cells: [''] };
+    case 2:
+      return {
+        container: 'grid grid-cols-2 gap-0.5 aspect-[2/1]',
+        cells: ['', ''],
+      };
+    case 3:
+      // 左に大きな1枚 + 右に縦2枚
+      return {
+        container: 'grid grid-cols-3 grid-rows-2 gap-0.5 aspect-[3/2]',
+        cells: ['col-span-2 row-span-2', '', ''],
+      };
+    case 4:
+      return {
+        container: 'grid grid-cols-2 grid-rows-2 gap-0.5 aspect-square',
+        cells: ['', '', '', ''],
+      };
+    case 5:
+      // 上行2枚（各50%幅）+ 下行3枚（各33%幅）
+      return {
+        container: 'grid grid-cols-6 grid-rows-2 gap-0.5 aspect-[6/5]',
+        cells: ['col-span-3', 'col-span-3', 'col-span-2', 'col-span-2', 'col-span-2'],
+      };
+    default: // 6 cells (6枚以上)
+      return {
+        container: 'grid grid-cols-3 grid-rows-2 gap-0.5 aspect-[3/2]',
+        cells: ['', '', '', '', '', ''],
+      };
+  }
 }
 
 type Props = { tripItemId: number; editable: boolean };
@@ -21,7 +59,7 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
 
   useEffect(() => {
     fetchPhotos();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripItemId]);
 
   const fetchPhotos = async () => {
@@ -57,15 +95,18 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
     setUploading(false);
   };
 
-  const handleDelete = async (photo: PlacePhoto, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDelete = async (photo: PlacePhoto) => {
     await getClient().storage.from(BUCKET).remove([photo.storage_path]);
     await getClient().from("place_photos").delete().eq("id", photo.id);
-    setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+    const newPhotos = photos.filter((p) => p.id !== photo.id);
+    setPhotos(newPhotos);
+    if (lightbox !== null) {
+      if (newPhotos.length === 0) setLightbox(null);
+      else if (lightbox >= newPhotos.length) setLightbox(newPhotos.length - 1);
+    }
   };
 
-  const swap = async (i: number, j: number, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const swap = async (i: number, j: number) => {
     const a = photos[i], b = photos[j];
     if (!a || !b) return;
     await Promise.all([
@@ -73,10 +114,16 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
       getClient().from("place_photos").update({ order_index: a.order_index }).eq("id", b.id),
     ]);
     await fetchPhotos();
+    if (lightbox === i) setLightbox(j);
+    else if (lightbox === j) setLightbox(i);
   };
 
-  // Hide entirely if no photos and not editable
   if (photos.length === 0 && !editable) return null;
+
+  const displayCount = Math.min(photos.length, MAX_VISIBLE);
+  const visiblePhotos = photos.slice(0, displayCount);
+  const hiddenCount = photos.length - displayCount;
+  const layout = getLayout(displayCount);
 
   return (
     <div className="relative">
@@ -89,49 +136,41 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
         onChange={(e) => { if (e.target.files) handleFiles(e.target.files); e.target.value = ""; }}
       />
 
-      {photos.length > 0 && (
-        <div className="flex gap-1 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
-          {photos.map((photo, idx) => (
-            <div
-              key={photo.id}
-              className="snap-center flex-shrink-0 w-full aspect-[16/10] relative bg-slate-100 cursor-pointer"
-              onClick={() => setLightbox(idx)}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={publicUrl(photo.storage_path)}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-              {photos.length > 1 && (
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/50 text-white text-[10px] font-semibold backdrop-blur-sm">
-                  {idx + 1} / {photos.length}
-                </div>
-              )}
-              {editable && (
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center gap-2">
+      {visiblePhotos.length > 0 && (
+        <div className={`relative ${layout.container}`}>
+          {visiblePhotos.map((photo, idx) => {
+            const isLast = idx === displayCount - 1;
+            const showOverlay = isLast && hiddenCount > 0;
+            return (
+              <div
+                key={photo.id}
+                className={`relative bg-slate-100 cursor-pointer overflow-hidden ${layout.cells[idx]}`}
+                onClick={() => setLightbox(idx)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={publicUrl(photo.storage_path)}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                {showOverlay && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex flex-col items-center justify-center text-white">
+                    <span className="text-2xl sm:text-3xl font-bold leading-none">+{hiddenCount}</span>
+                    <span className="text-[10px] sm:text-xs mt-1 opacity-90">タップで全{photos.length}枚</span>
+                  </div>
+                )}
+                {editable && !showOverlay && (
                   <button
-                    onClick={(e) => swap(idx, idx - 1, e)}
-                    disabled={idx === 0}
-                    className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs disabled:opacity-30 hover:bg-black/70"
-                  >◀</button>
-                  <button
-                    onClick={(e) => handleDelete(photo, e)}
-                    className="w-8 h-8 rounded-full bg-red-500/80 backdrop-blur-sm text-white text-xs hover:bg-red-500"
-                  >🗑</button>
-                  <button
-                    onClick={(e) => swap(idx, idx + 1, e)}
-                    disabled={idx === photos.length - 1}
-                    className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs disabled:opacity-30 hover:bg-black/70"
-                  >▶</button>
-                </div>
-              )}
-            </div>
-          ))}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(photo); }}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-500 text-white text-sm flex items-center justify-center transition-colors"
+                    title="削除"
+                  >×</button>
+                )}
+              </div>
+            );
+          })}
           {uploading && (
-            <div className="snap-center flex-shrink-0 w-full aspect-[16/10] bg-slate-100 flex items-center justify-center">
-              <span className="text-xs text-slate-400 animate-pulse">追加中...</span>
-            </div>
+            <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-center text-[10px] py-1">追加中...</div>
           )}
         </div>
       )}
@@ -158,6 +197,7 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
             src={publicUrl(photos[lightbox].storage_path)}
             alt=""
             className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
           />
           {photos.length > 1 && (
             <>
@@ -173,11 +213,30 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
           )}
           <button
             className="absolute top-5 right-5 text-white text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
-            onClick={() => setLightbox(null)}
+            onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
           >✕</button>
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 text-white text-xs">
             {lightbox + 1} / {photos.length}
           </div>
+          {editable && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-2">
+              <button
+                onClick={(e) => { e.stopPropagation(); swap(lightbox, lightbox - 1); }}
+                disabled={lightbox === 0}
+                className="px-3 h-9 rounded-full bg-white/15 hover:bg-white/30 disabled:opacity-30 text-white text-xs"
+              >← 順序</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(photos[lightbox]); }}
+                className="w-9 h-9 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-sm flex items-center justify-center"
+                title="削除"
+              >🗑</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); swap(lightbox, lightbox + 1); }}
+                disabled={lightbox === photos.length - 1}
+                className="px-3 h-9 rounded-full bg-white/15 hover:bg-white/30 disabled:opacity-30 text-white text-xs"
+              >順序 →</button>
+            </div>
+          )}
         </div>
       )}
     </div>
