@@ -229,10 +229,24 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         return;
       }
 
-      // Nominatim 座標で正確にピン留めし、ラベルとして施設名を付与
-      // `?q=NAME` だと Google Maps 側で再検索されて同名店舗の一覧になるため避ける
-      const mapsUrl = (p: NominatimResult) =>
-        `https://maps.google.com/?q=${p.lat},${p.lon}(${encodeURIComponent(p.name)})`;
+      // Google Maps の Place カード（星評価・口コミ）を開かせるには「検索」させる必要がある。
+      // 名前だけだと複数候補になるため、施設名＋市町村＋都道府県の最小限で絞り込み、
+      // さらに座標で地図ビューポートを固定して一意に特定させる。
+      // display_name の不要な行政区分（振興局・地方・郵便番号・国名）は除外する。
+      const mapsUrl = (p: NominatimResult) => {
+        const parts = p.display_name
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s) =>
+            s &&
+            s !== '日本' &&
+            !s.endsWith('振興局') &&
+            !s.endsWith('地方') &&
+            !/^\d{3}-?\d{4}$/.test(s)
+          );
+        const query = parts.join(' ');
+        return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${p.lat},${p.lon},17z`;
+      };
 
       // 1位が2位の2倍以上のスコア → 1位を確定
       const topImportance = named[0].importance;
