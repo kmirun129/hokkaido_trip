@@ -270,12 +270,30 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                 placeholder="個人的なメモ"
                 multiline
               />
-              <Field
-                label="GoogleマップURL"
-                value={form.maps_url ?? ''}
-                onChange={(v) => set('maps_url', v)}
-                placeholder="https://maps.google.com/..."
-              />
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-500">GoogleマップURL</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = form.name?.trim();
+                      if (!name) return;
+                      set('maps_url', `https://maps.google.com/?q=${encodeURIComponent(name)}`);
+                    }}
+                    disabled={!form.name?.trim()}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-light text-sky text-[11px] font-semibold hover:bg-sky hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span>📍</span> 自動取得
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={form.maps_url ?? ''}
+                  onChange={(e) => set('maps_url', e.target.value || '')}
+                  placeholder="https://maps.google.com/..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+                />
+              </div>
             </>
           )}
         </div>
