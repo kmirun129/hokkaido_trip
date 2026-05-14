@@ -195,7 +195,7 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         `https://nominatim.openstreetmap.org/search?${params}`,
         { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
       );
-      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number };
+      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number; name: string };
       let data: NominatimResult[] = await res.json();
 
       // bounded=1 で結果なし → 北海道縛りを外して再試行
@@ -222,23 +222,33 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
       // importance スコア降順でソート
       data.sort((a, b) => b.importance - a.importance);
 
+      // 名称なし（座標のみ）の結果は除外
+      const named = data.filter((p) => p.name?.trim());
+      if (named.length === 0) {
+        setFetchResult({ type: 'none' });
+        return;
+      }
+
+      // 施設名ベースの Google Maps URL（座標ピンではなく施設名で検索）
+      const mapsUrl = (p: NominatimResult) =>
+        `https://www.google.com/maps/place/${encodeURIComponent(p.name)}/@${p.lat},${p.lon},17z`;
+
       // 1位が2位の2倍以上のスコア → 1位を確定
-      const topImportance = data[0].importance;
-      const secondImportance = data[1]?.importance ?? 0;
-      const isTopDominant = data.length === 1 || topImportance >= secondImportance * 2;
+      const topImportance = named[0].importance;
+      const secondImportance = named[1]?.importance ?? 0;
+      const isTopDominant = named.length === 1 || topImportance >= secondImportance * 2;
 
       if (isTopDominant) {
-        const url = `https://maps.google.com/?q=${data[0].lat},${data[0].lon}`;
-        set('maps_url', url);
-        setFetchResult({ type: 'found', label: data[0].display_name.split(',')[0] });
-      } else if (data.length >= 5) {
+        set('maps_url', mapsUrl(named[0]));
+        setFetchResult({ type: 'found', label: named[0].name });
+      } else if (named.length >= 5) {
         setFetchResult({ type: 'too_many' });
       } else {
         setFetchResult({
           type: 'multiple',
-          candidates: data.map((p) => ({
-            label: p.display_name.split(',').slice(0, 2).join('、'),
-            url: `https://maps.google.com/?q=${p.lat},${p.lon}`,
+          candidates: named.map((p) => ({
+            label: `${p.name}（${p.display_name.split(',').slice(1, 3).map(s => s.trim()).join(' ')}）`,
+            url: mapsUrl(p),
           })),
         });
       }
