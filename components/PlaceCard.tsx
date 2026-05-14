@@ -1,6 +1,6 @@
 "use client";
 
-import { TripItem, PlaceType } from "@/types";
+import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
@@ -42,7 +42,8 @@ export default function PlaceCard({
 
   const isClosed = hoursData && weekday && hoursData.closed.includes(weekday);
 
-  const hasSubInfo = item.description || item.business_hours || item.memo;
+  const subTasks = (item.sub_items ?? []).filter((t: SubTask) => t.content.trim());
+  const hasSubInfo = item.description || item.business_hours || item.memo || subTasks.length > 0;
 
   return (
     <div
@@ -108,6 +109,21 @@ export default function PlaceCard({
             <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 rounded-xl px-3 py-2">
               <span className="text-base flex-shrink-0">📝</span>
               <span className="leading-relaxed whitespace-pre-wrap">{item.memo}</span>
+            </div>
+          )}
+          {subTasks.length > 0 && (
+            <div className="bg-slate-50 rounded-xl px-3 py-2.5 space-y-1.5">
+              {subTasks.map((task: SubTask) => (
+                <div key={task.id} className="flex items-center gap-2 text-sm text-slate-700">
+                  <span className="text-slate-300 flex-shrink-0">•</span>
+                  {task.showTime && task.time && (
+                    <span className="text-[11px] font-semibold tabular-nums text-sky bg-sky/10 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                      {task.time}
+                    </span>
+                  )}
+                  <span className="leading-snug">{task.content}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>

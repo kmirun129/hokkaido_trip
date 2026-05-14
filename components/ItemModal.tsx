@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TripItem, PlaceType, TransportMode, NewTripItem } from "@/types";
+import { TripItem, PlaceType, TransportMode, NewTripItem, SubTask } from "@/types";
 import { TIME_OPTIONS, DURATION_OPTIONS, BusinessHours, HoursBlock, parseHours } from "@/lib/hours";
 
 const PLACE_TYPES: PlaceType[] = ['観光', '食事', '宿泊', '体験', 'その他'];
@@ -127,6 +127,67 @@ function HoursBlockPicker({ value, onChange }: { value: string | null; onChange:
   );
 }
 
+// ── サブタスクエディタ ────────────────────────────────────────
+function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: SubTask[]) => void }) {
+  const add = () => {
+    onChange([...value, { id: crypto.randomUUID(), time: '', showTime: false, content: '' }]);
+  };
+  const remove = (id: string) => onChange(value.filter((t) => t.id !== id));
+  const update = (id: string, patch: Partial<SubTask>) =>
+    onChange(value.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs font-semibold text-slate-500">立ち寄り・やることリスト</label>
+      {value.map((task) => (
+        <div key={task.id} className="flex items-start gap-2">
+          {/* 時刻表示トグル + 時刻入力 */}
+          <div className="flex items-center gap-1 flex-shrink-0 pt-2">
+            <button
+              type="button"
+              onClick={() => update(task.id, { showTime: !task.showTime })}
+              className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] transition-colors ${
+                task.showTime ? 'bg-sky text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+              }`}
+              title="時刻を表示/非表示"
+            >
+              🕐
+            </button>
+            {task.showTime && (
+              <input
+                type="time"
+                value={task.time}
+                onChange={(e) => update(task.id, { time: e.target.value })}
+                className="w-[84px] px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+              />
+            )}
+          </div>
+          {/* 内容 */}
+          <input
+            type="text"
+            value={task.content}
+            onChange={(e) => update(task.id, { content: e.target.value })}
+            placeholder="例: ロイズチョコレートワールド"
+            className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+          />
+          <button
+            type="button"
+            onClick={() => remove(task.id)}
+            className="flex-shrink-0 mt-2 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 text-xs flex items-center justify-center transition-colors"
+          >✕</button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs hover:border-sky hover:text-sky transition-colors"
+      >
+        ＋ 項目を追加
+      </button>
+    </div>
+  );
+}
+
 // ── メインモーダル ────────────────────────────────────────────
 export default function ItemModal({ mode, onSave, onClose }: Props) {
   const isTransport =
@@ -142,7 +203,7 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         item_type: 'transport',
         transport_mode: '車', transport_duration: null, transport_memo: null,
         place_type: null, name: null, time: null, duration: null,
-        description: null, memo: null, business_hours: null, maps_url: null,
+        description: null, memo: null, business_hours: null, maps_url: null, sub_items: null,
       }
     : {
         day: (mode as { day: number }).day,
@@ -150,11 +211,14 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         item_type: 'place',
         place_type: '観光',
         name: null, time: null, duration: null,
-        description: null, memo: null, business_hours: null, maps_url: null,
+        description: null, memo: null, business_hours: null, maps_url: null, sub_items: null,
         transport_mode: null, transport_duration: null, transport_memo: null,
       };
 
   const [form, setForm] = useState<NewTripItem>(initial);
+  const [subTasks, setSubTasks] = useState<SubTask[]>(
+    (mode.type === 'edit' ? mode.item.sub_items : null) ?? []
+  );
   const [saving, setSaving] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchResult, setFetchResult] = useState<
@@ -329,7 +393,8 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
   const handleSave = async () => {
     if (!isTransport && !form.name?.trim()) return;
     setSaving(true);
-    await onSave(form);
+    const filled = subTasks.filter((t) => t.content.trim());
+    await onSave({ ...form, sub_items: filled.length > 0 ? filled : null });
     setSaving(false);
   };
 
@@ -401,6 +466,8 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
               />
 
               <Field label="メモ" value={form.memo ?? ''} onChange={(v) => set('memo', v)} placeholder="個人的なメモ" multiline />
+
+              <SubTaskEditor value={subTasks} onChange={setSubTasks} />
 
               {/* GoogleマップURL */}
               <div>

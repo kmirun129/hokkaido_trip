@@ -1,6 +1,13 @@
 export type PlaceType = '観光' | '食事' | '宿泊' | '体験' | 'その他';
 export type TransportMode = '徒歩' | '車' | '電車' | 'バス' | '飛行機' | 'タクシー' | 'フェリー';
 
+export type SubTask = {
+  id: string;
+  time: string;
+  showTime: boolean;
+  content: string;
+};
+
 export type TripItem = {
   id: number;
   day: number;
@@ -17,6 +24,7 @@ export type TripItem = {
   transport_mode: TransportMode | null;
   transport_duration: string | null;
   transport_memo: string | null;
+  sub_items: SubTask[] | null;
   created_at: string;
 };
 
