@@ -229,9 +229,10 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         return;
       }
 
-      // 施設名で Google Maps 検索するURL（place/@座標 形式は invalid coord になるため使わない）
+      // Nominatim 座標で正確にピン留めし、ラベルとして施設名を付与
+      // `?q=NAME` だと Google Maps 側で再検索されて同名店舗の一覧になるため避ける
       const mapsUrl = (p: NominatimResult) =>
-        `https://maps.google.com/?q=${encodeURIComponent(p.name)}`;
+        `https://maps.google.com/?q=${p.lat},${p.lon}(${encodeURIComponent(p.name)})`;
 
       // 1位が2位の2倍以上のスコア → 1位を確定
       const topImportance = named[0].importance;
