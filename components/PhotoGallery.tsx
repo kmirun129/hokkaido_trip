@@ -49,9 +49,9 @@ function getLayout(count: number): Layout {
   }
 }
 
-type Props = { tripItemId: number; editable: boolean };
+type Props = { tripItemId: number; editable: boolean; onCountChange?: (count: number) => void };
 
-export default function PhotoGallery({ tripItemId, editable }: Props) {
+export default function PhotoGallery({ tripItemId, editable, onCountChange }: Props) {
   const [photos, setPhotos] = useState<PlacePhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -61,6 +61,10 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
     fetchPhotos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripItemId]);
+
+  useEffect(() => {
+    onCountChange?.(photos.length);
+  }, [photos.length, onCountChange]);
 
   const fetchPhotos = async () => {
     const { data } = await getClient()
@@ -74,23 +78,27 @@ export default function PhotoGallery({ tripItemId, editable }: Props) {
   const handleFiles = async (files: FileList) => {
     setUploading(true);
     const base = photos.length > 0 ? Math.max(...photos.map((p) => p.order_index)) : 0;
-    for (let i = 0; i < files.length; i++) {
-      try {
-        const blob = await compressImage(files[i]);
-        const path = `${tripItemId}/${Date.now()}-${i}.jpg`;
-        const { error } = await getClient()
-          .storage.from(BUCKET)
-          .upload(path, blob, { contentType: "image/jpeg" });
-        if (error) continue;
-        await getClient().from("place_photos").insert({
-          trip_item_id: tripItemId,
-          storage_path: path,
-          order_index: base + (i + 1) * 10,
-        });
-      } catch {
-        // skip failed
-      }
-    }
+    const stamp = Date.now();
+    // 並列アップロード（複数枚を一度に高速処理）
+    await Promise.all(
+      Array.from(files).map(async (file, i) => {
+        try {
+          const blob = await compressImage(file);
+          const path = `${tripItemId}/${stamp}-${i}.jpg`;
+          const { error } = await getClient()
+            .storage.from(BUCKET)
+            .upload(path, blob, { contentType: "image/jpeg" });
+          if (error) return;
+          await getClient().from("place_photos").insert({
+            trip_item_id: tripItemId,
+            storage_path: path,
+            order_index: base + (i + 1) * 10,
+          });
+        } catch {
+          // skip failed
+        }
+      })
+    );
     await fetchPhotos();
     setUploading(false);
   };

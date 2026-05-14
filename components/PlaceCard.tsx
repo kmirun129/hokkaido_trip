@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
@@ -29,6 +30,7 @@ export default function PlaceCard({
 }: Props) {
   const { mode } = useMode();
   const { settings } = useSettings();
+  const [photoCount, setPhotoCount] = useState(0);
   const isEdit = mode === "edit";
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
@@ -44,6 +46,8 @@ export default function PlaceCard({
 
   const subTasks = (item.sub_items ?? []).filter((t: SubTask) => t.content.trim());
   const hasSubInfo = item.description || item.business_hours || item.memo || subTasks.length > 0;
+  const hasPhotos = photoCount > 0;
+  const hasMap = !!(item.name && item.maps_url);
 
   return (
     <div
@@ -51,15 +55,18 @@ export default function PlaceCard({
       className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden scroll-mt-20"
     >
       {/* 写真ギャラリー */}
-      <PhotoGallery tripItemId={item.id} editable={isEdit} />
+      <PhotoGallery tripItemId={item.id} editable={isEdit} onCountChange={setPhotoCount} />
 
       {/* カードヘッダー */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl ${cfg.bg} ring-4 ${cfg.ring} flex-shrink-0`}>
-          {cfg.icon}
-        </div>
+        {/* 写真がない時のみカテゴリアイコンを表示（写真があれば視覚的役割が重複するため省略） */}
+        {!hasPhotos && (
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl ${cfg.bg} ring-4 ${cfg.ring} flex-shrink-0`}>
+            {cfg.icon}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
+          <div className="flex items-center gap-1.5 flex-wrap mb-1">
             <span className={`text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
               {type}
             </span>
@@ -68,6 +75,17 @@ export default function PlaceCard({
             )}
             {item.duration && (
               <span className="text-xs text-slate-400">⏱ {item.duration}</span>
+            )}
+            {/* プレビュー時のみマップチップを表示（編集時は右上に編集ボタンが入るので説明枠下に出す） */}
+            {!isEdit && hasMap && (
+              <a
+                href={item.maps_url!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-sky bg-sky-light px-2 py-0.5 rounded-full hover:bg-sky hover:text-white transition-colors"
+              >
+                📍Map
+              </a>
             )}
           </div>
           <h3 className="font-bold text-slate-800 text-base leading-snug">
@@ -129,11 +147,11 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* マップリンク */}
-      {item.name && item.maps_url && (
+      {/* 編集モードのみ：下部にマップリンク（編集ボタンと干渉しないため） */}
+      {isEdit && hasMap && (
         <div className="px-4 pb-4">
-          <a href={item.maps_url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-sky font-semibold hover:underline">
+          <a href={item.maps_url!} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-sky font-semibold hover:underline">
             <span>📍</span> Googleマップで開く
           </a>
         </div>
