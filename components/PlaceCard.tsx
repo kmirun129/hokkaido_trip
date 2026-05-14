@@ -30,7 +30,7 @@ export default function PlaceCard({
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
 
-  const hasSubInfo = item.description || item.business_hours || item.memo || item.maps_url;
+  const hasSubInfo = item.description || item.business_hours || item.memo;
 
   return (
     <div
@@ -90,9 +90,9 @@ export default function PlaceCard({
         )}
       </div>
 
-      {/* サブ情報 */}
+      {/* サブ情報（説明・営業時間・メモ） */}
       {hasSubInfo && (
-        <div className="px-4 pb-4 space-y-2 border-t border-slate-50 pt-3">
+        <div className="px-4 pb-3 space-y-2 border-t border-slate-50 pt-3">
           {item.description && (
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
           )}
@@ -108,14 +108,29 @@ export default function PlaceCard({
               <span className="leading-relaxed whitespace-pre-wrap">{item.memo}</span>
             </div>
           )}
-          {item.maps_url && (
+        </div>
+      )}
+
+      {/* マップリンク（常に表示） */}
+      {item.name && (
+        <div className="px-4 pb-4">
+          {item.maps_url ? (
             <a
               href={item.maps_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-sky font-medium hover:underline"
+              className="inline-flex items-center gap-2 text-sm text-sky font-semibold hover:underline"
             >
               <span>📍</span> Googleマップで開く
+            </a>
+          ) : (
+            <a
+              href={`https://maps.google.com/?q=${encodeURIComponent(item.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-sky transition-colors"
+            >
+              <span>🔍</span> Googleマップで探す
             </a>
           )}
         </div>

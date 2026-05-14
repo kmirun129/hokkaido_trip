@@ -47,13 +47,18 @@ export default function Home() {
     items.length > 0 ? Math.max(...items.map((i) => i.order_index)) + 10 : 10;
 
   const handleSave = async (data: NewTripItem) => {
+    // id / created_at が混入していると Supabase が主キー更新エラーを出すので除去
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, created_at: _ca, ...cleanData } = data as TripItem;
     if (modal?.type === 'edit') {
-      await getClient()
+      const { error } = await getClient()
         .from('trip_items')
-        .update(data)
+        .update(cleanData)
         .eq('id', modal.item.id);
+      if (error) { alert('保存に失敗しました: ' + error.message); return; }
     } else {
-      await getClient().from('trip_items').insert(data);
+      const { error } = await getClient().from('trip_items').insert(cleanData);
+      if (error) { alert('保存に失敗しました: ' + error.message); return; }
     }
     setModal(null);
     await fetchItems(activeDay);
