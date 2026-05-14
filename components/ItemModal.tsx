@@ -229,9 +229,9 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         return;
       }
 
-      // 施設名ベースの Google Maps URL（座標ピンではなく施設名で検索）
+      // 施設名で Google Maps 検索するURL（place/@座標 形式は invalid coord になるため使わない）
       const mapsUrl = (p: NominatimResult) =>
-        `https://www.google.com/maps/place/${encodeURIComponent(p.name)}/@${p.lat},${p.lon},17z`;
+        `https://maps.google.com/?q=${encodeURIComponent(p.name)}`;
 
       // 1位が2位の2倍以上のスコア → 1位を確定
       const topImportance = named[0].importance;
