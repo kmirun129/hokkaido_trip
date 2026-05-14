@@ -12,6 +12,7 @@ const DEFAULT: TripSettings = {
   tags: ['絶景', 'グルメ', '体験', '自然'],
   hero_image_path: null,
   start_date: '2026-06-04',
+  day_themes: {},
   updated_at: '',
 };
 

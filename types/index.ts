@@ -46,6 +46,7 @@ export type TripSettings = {
   tags: string[];
   hero_image_path: string | null;
   start_date: string | null;
+  day_themes: Record<string, string> | null;
   updated_at: string;
 };
 

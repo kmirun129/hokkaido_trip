@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Header from "@/components/Header";
 import DayTabs from "@/components/DayTabs";
+import DayTheme from "@/components/DayTheme";
 import PlaceCard from "@/components/PlaceCard";
 import TransportBar from "@/components/TransportBar";
 import ItemModal from "@/components/ItemModal";
@@ -88,6 +89,8 @@ export default function Home() {
       <ModeToggle />
       <Header />
       <DayTabs activeDay={activeDay} onDayChange={handleDayChange} />
+
+      <DayTheme day={activeDay} />
 
       {/* ジャンプナビ */}
       {places.length > 0 && (

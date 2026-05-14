@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { icon: string; color: string; bg: string; ring: string }> = {
-  観光:   { icon: '🏔️', color: 'text-sky',      bg: 'bg-sky-light',      ring: 'ring-sky/20' },
-  食事:   { icon: '🍜', color: 'text-accent',   bg: 'bg-accent-light',   ring: 'ring-accent/20' },
-  宿泊:   { icon: '🏨', color: 'text-lavender', bg: 'bg-lavender-light', ring: 'ring-lavender/20' },
-  体験:   { icon: '🎿', color: 'text-nature',   bg: 'bg-nature-light',   ring: 'ring-nature/20' },
-  その他: { icon: '📍', color: 'text-slate-500',bg: 'bg-slate-100',      ring: 'ring-slate-300/20' },
+const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string }> = {
+  観光:   { color: 'text-sky',      bg: 'bg-sky-light' },
+  食事:   { color: 'text-accent',   bg: 'bg-accent-light' },
+  宿泊:   { color: 'text-lavender', bg: 'bg-lavender-light' },
+  体験:   { color: 'text-nature',   bg: 'bg-nature-light' },
+  その他: { color: 'text-slate-500',bg: 'bg-slate-100' },
 };
 
 type Props = {
@@ -30,7 +29,6 @@ export default function PlaceCard({
 }: Props) {
   const { mode } = useMode();
   const { settings } = useSettings();
-  const [photoCount, setPhotoCount] = useState(0);
   const isEdit = mode === "edit";
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
@@ -46,7 +44,6 @@ export default function PlaceCard({
 
   const subTasks = (item.sub_items ?? []).filter((t: SubTask) => t.content.trim());
   const hasSubInfo = item.description || item.business_hours || item.memo || subTasks.length > 0;
-  const hasPhotos = photoCount > 0;
   const hasMap = !!(item.name && item.maps_url);
 
   return (
@@ -54,66 +51,67 @@ export default function PlaceCard({
       id={`place-${item.id}`}
       className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden scroll-mt-20"
     >
-      {/* 写真ギャラリー */}
-      <PhotoGallery tripItemId={item.id} editable={isEdit} onCountChange={setPhotoCount} />
+      {/* ── 上部: メタ + 時刻 + 名前 + マップ右端固定 ── */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            {/* メタ行（カテゴリ・所要時間） */}
+            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+              <span className={`text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
+                {type}
+              </span>
+              {item.duration && (
+                <span className="text-[11px] text-slate-400">⏱ {item.duration}</span>
+              )}
+            </div>
+            {/* 時刻 + 場所名（大きく目立たせる） */}
+            <div className="flex items-baseline gap-2.5 flex-wrap">
+              {item.time && (
+                <span className="text-xl font-bold tabular-nums text-sky leading-none">
+                  {item.time}
+                </span>
+              )}
+              <h3 className="text-lg font-bold text-slate-800 leading-tight break-words">
+                {item.name ?? '（名称未設定）'}
+              </h3>
+            </div>
+          </div>
 
-      {/* カードヘッダー */}
-      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-        {/* 写真がない時のみカテゴリアイコンを表示（写真があれば視覚的役割が重複するため省略） */}
-        {!hasPhotos && (
-          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl ${cfg.bg} ring-4 ${cfg.ring} flex-shrink-0`}>
-            {cfg.icon}
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className={`text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
-              {type}
-            </span>
-            {item.time && (
-              <span className="text-xs text-slate-500 font-semibold tabular-nums">🕐 {item.time}</span>
-            )}
-            {item.duration && (
-              <span className="text-xs text-slate-400">⏱ {item.duration}</span>
-            )}
-            {/* プレビュー時のみマップチップを表示（編集時は右上に編集ボタンが入るので説明枠下に出す） */}
-            {!isEdit && hasMap && (
-              <a
-                href={item.maps_url!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-sky bg-sky-light px-2 py-0.5 rounded-full hover:bg-sky hover:text-white transition-colors"
-              >
-                📍Map
-              </a>
-            )}
-          </div>
-          <h3 className="font-bold text-slate-800 text-base leading-snug">
-            {item.name ?? '（名称未設定）'}
-          </h3>
+          {/* 右端固定: プレビュー時はMapボタン / 編集時は編集ボタン群 */}
+          {isEdit ? (
+            <div className="flex flex-col gap-1 flex-shrink-0">
+              <div className="flex gap-1">
+                <button onClick={onMoveUp} disabled={isFirst}
+                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▲</button>
+                <button onClick={onMoveDown} disabled={isLast}
+                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▼</button>
+              </div>
+              <div className="flex gap-1">
+                <button onClick={onEdit}
+                  className="w-7 h-7 rounded-lg bg-sky-light hover:bg-sky/20 flex items-center justify-center text-xs transition-colors">✏️</button>
+                <button onClick={onDelete}
+                  className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-xs transition-colors">🗑️</button>
+              </div>
+            </div>
+          ) : hasMap ? (
+            <a
+              href={item.maps_url!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-sky bg-sky-light px-2.5 py-1.5 rounded-full hover:bg-sky hover:text-white transition-colors"
+            >
+              📍 Map
+            </a>
+          ) : null}
         </div>
-
-        {isEdit && (
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            <div className="flex gap-1">
-              <button onClick={onMoveUp} disabled={isFirst}
-                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▲</button>
-              <button onClick={onMoveDown} disabled={isLast}
-                className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▼</button>
-            </div>
-            <div className="flex gap-1">
-              <button onClick={onEdit}
-                className="w-7 h-7 rounded-lg bg-sky-light hover:bg-sky/20 flex items-center justify-center text-xs transition-colors">✏️</button>
-              <button onClick={onDelete}
-                className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-xs transition-colors">🗑️</button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* サブ情報 */}
+      {/* ── 中央: 写真ギャラリー ── */}
+      <PhotoGallery tripItemId={item.id} editable={isEdit} />
+
+      {/* ── 下部: 詳細情報 ── */}
       {hasSubInfo && (
-        <div className="px-4 pb-3 space-y-2 border-t border-slate-50 pt-3">
+        <div className="px-4 pb-3 pt-3 space-y-2 border-t border-slate-50">
           {item.description && (
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
           )}
@@ -147,7 +145,7 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* 編集モードのみ：下部にマップリンク（編集ボタンと干渉しないため） */}
+      {/* 編集モードのみ: 下部にマップリンク（編集ボタンと干渉するため） */}
       {isEdit && hasMap && (
         <div className="px-4 pb-4">
           <a href={item.maps_url!} target="_blank" rel="noopener noreferrer"
