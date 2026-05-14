@@ -195,7 +195,7 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         `https://nominatim.openstreetmap.org/search?${params}`,
         { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
       );
-      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number; name: string };
+      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number; name: string; class: string; type: string };
       let data: NominatimResult[] = await res.json();
 
       // bounded=1 で結果なし → 北海道縛りを外して再試行
@@ -253,16 +253,48 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
       const secondImportance = named[1]?.importance ?? 0;
       const isTopDominant = named.length === 1 || topImportance >= secondImportance * 2;
 
+      // OSM の class/type を日本語カテゴリに変換（同名候補を区別するため）
+      const classLabel = (cls: string, t: string): string | null => {
+        const map: Record<string, string> = {
+          'aeroway/aerodrome': '空港', 'aeroway/terminal': '空港ターミナル',
+          'railway/station': '駅', 'railway/halt': '駅', 'railway/stop': '駅停車場', 'railway/tram_stop': '路面電車駅',
+          'highway/bus_stop': 'バス停',
+          'amenity/restaurant': '飲食店', 'amenity/cafe': 'カフェ', 'amenity/fast_food': 'ファストフード',
+          'amenity/bar': 'バー', 'amenity/pub': '居酒屋', 'amenity/parking': '駐車場',
+          'amenity/hospital': '病院', 'amenity/bank': '銀行', 'amenity/post_office': '郵便局',
+          'tourism/hotel': 'ホテル', 'tourism/hostel': 'ホステル', 'tourism/guest_house': 'ゲストハウス',
+          'tourism/attraction': '観光地', 'tourism/museum': '博物館', 'tourism/zoo': '動物園',
+          'tourism/viewpoint': '展望台', 'tourism/theme_park': 'テーマパーク',
+          'leisure/park': '公園', 'leisure/garden': '庭園', 'leisure/nature_reserve': '自然保護区',
+          'natural/peak': '山', 'natural/water': '水域', 'natural/beach': 'ビーチ',
+          'shop/convenience': 'コンビニ', 'shop/supermarket': 'スーパー', 'shop/car_rental': 'レンタカー',
+          'shop/department_store': 'デパート', 'shop/mall': 'モール',
+          'building/train_station': '駅舎',
+        };
+        return map[`${cls}/${t}`] ?? null;
+      };
+
+      // 候補ラベル：display_name 先頭の完全名 + カテゴリ + 市町村
+      // 同名OSMエントリ（空港本体／駅／駅プラットフォーム など）が区別できるようにする
+      const candidateLabel = (p: NominatimResult) => {
+        const parts = p.display_name.split(',').map((s) => s.trim());
+        const fullName = parts[0] || p.name;
+        const city = parts.find((s) => /[市町村区]$/.test(s));
+        const cat = classLabel(p.class, p.type);
+        const ctx = [cat, city && !fullName.includes(city) ? city : null].filter(Boolean).join('・');
+        return ctx ? `${fullName}（${ctx}）` : fullName;
+      };
+
       if (isTopDominant) {
         set('maps_url', mapsUrl(named[0]));
-        setFetchResult({ type: 'found', label: named[0].name });
+        setFetchResult({ type: 'found', label: named[0].display_name.split(',')[0].trim() || named[0].name });
       } else if (named.length >= 5) {
         setFetchResult({ type: 'too_many' });
       } else {
         setFetchResult({
           type: 'multiple',
           candidates: named.map((p) => ({
-            label: `${p.name}（${p.display_name.split(',').slice(1, 3).map(s => s.trim()).join(' ')}）`,
+            label: candidateLabel(p),
             url: mapsUrl(p),
           })),
         });
