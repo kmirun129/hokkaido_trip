@@ -180,19 +180,59 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
     if (!name) return;
     setFetching(true); setFetchResult(null);
     try {
+      // 北海道バウンディングボックス: 西端,北端,東端,南端
+      const HOKKAIDO_VIEWBOX = '139.3,45.6,145.9,41.3';
+      const params = new URLSearchParams({
+        q: `${name} 北海道`,
+        format: 'json',
+        limit: '5',
+        'accept-language': 'ja',
+        countrycodes: 'jp',
+        viewbox: HOKKAIDO_VIEWBOX,
+        bounded: '1',
+      });
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=5&accept-language=ja&countrycodes=jp`,
+        `https://nominatim.openstreetmap.org/search?${params}`,
         { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
       );
-      const data: { lat: string; lon: string; display_name: string }[] = await res.json();
+      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number };
+      let data: NominatimResult[] = await res.json();
+
+      // bounded=1 で結果なし → 北海道縛りを外して再試行
+      if (data.length === 0) {
+        const params2 = new URLSearchParams({
+          q: name,
+          format: 'json',
+          limit: '5',
+          'accept-language': 'ja',
+          countrycodes: 'jp',
+        });
+        const res2 = await fetch(
+          `https://nominatim.openstreetmap.org/search?${params2}`,
+          { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
+        );
+        data = await res2.json();
+      }
+
       if (data.length === 0) {
         setFetchResult({ type: 'none' });
-      } else if (data.length >= 5) {
-        setFetchResult({ type: 'too_many' });
-      } else if (data.length === 1) {
+        return;
+      }
+
+      // importance スコア降順でソート
+      data.sort((a, b) => b.importance - a.importance);
+
+      // 1位が2位の2倍以上のスコア → 1位を確定
+      const topImportance = data[0].importance;
+      const secondImportance = data[1]?.importance ?? 0;
+      const isTopDominant = data.length === 1 || topImportance >= secondImportance * 2;
+
+      if (isTopDominant) {
         const url = `https://maps.google.com/?q=${data[0].lat},${data[0].lon}`;
         set('maps_url', url);
         setFetchResult({ type: 'found', label: data[0].display_name.split(',')[0] });
+      } else if (data.length >= 5) {
+        setFetchResult({ type: 'too_many' });
       } else {
         setFetchResult({
           type: 'multiple',
