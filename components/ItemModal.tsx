@@ -136,8 +136,17 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         transport_mode: null, transport_duration: null, transport_memo: null,
       };
 
+  type FetchResult =
+    | { type: 'found'; label: string; url: string }
+    | { type: 'multiple'; candidates: { label: string; url: string }[] }
+    | { type: 'none' }
+    | { type: 'too_many' }
+    | { type: 'error' };
+
   const [form, setForm] = useState<NewTripItem>(initial);
   const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [fetchResult, setFetchResult] = useState<FetchResult | null>(null);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -149,6 +158,44 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
 
   const set = (key: keyof NewTripItem, value: string) => {
     setForm((f) => ({ ...f, [key]: value || null }));
+    if (key === 'name') setFetchResult(null);
+  };
+
+  const fetchMapsUrl = async () => {
+    const name = form.name?.trim();
+    if (!name) return;
+    setFetching(true);
+    setFetchResult(null);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=5&accept-language=ja&countrycodes=jp`,
+        { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
+      );
+      const data: { lat: string; lon: string; display_name: string }[] = await res.json();
+
+      if (data.length === 0) {
+        setFetchResult({ type: 'none' });
+      } else if (data.length >= 5) {
+        setFetchResult({ type: 'too_many' });
+      } else if (data.length === 1) {
+        const p = data[0];
+        const url = `https://maps.google.com/?q=${p.lat},${p.lon}`;
+        set('maps_url', url);
+        setFetchResult({ type: 'found', label: p.display_name.split(',')[0], url });
+      } else {
+        setFetchResult({
+          type: 'multiple',
+          candidates: data.map((p) => ({
+            label: p.display_name.split(',').slice(0, 2).join('、'),
+            url: `https://maps.google.com/?q=${p.lat},${p.lon}`,
+          })),
+        });
+      }
+    } catch {
+      setFetchResult({ type: 'error' });
+    } finally {
+      setFetching(false);
+    }
   };
 
   const handleSave = async () => {
@@ -275,15 +322,16 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                   <label className="text-xs font-semibold text-slate-500">GoogleマップURL</label>
                   <button
                     type="button"
-                    onClick={() => {
-                      const name = form.name?.trim();
-                      if (!name) return;
-                      set('maps_url', `https://maps.google.com/?q=${encodeURIComponent(name)}`);
-                    }}
-                    disabled={!form.name?.trim()}
+                    onClick={fetchMapsUrl}
+                    disabled={!form.name?.trim() || fetching}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-light text-sky text-[11px] font-semibold hover:bg-sky hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
-                    <span>📍</span> 自動取得
+                    {fetching ? (
+                      <span className="animate-spin inline-block">⟳</span>
+                    ) : (
+                      <span>📍</span>
+                    )}
+                    {fetching ? '検索中...' : '自動取得'}
                   </button>
                 </div>
                 <input
@@ -293,6 +341,52 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                   placeholder="https://maps.google.com/..."
                   className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
                 />
+
+                {/* 取得結果フィードバック */}
+                {fetchResult && (
+                  <div className="mt-2">
+                    {fetchResult.type === 'found' && (
+                      <p className="text-xs text-nature font-medium flex items-center gap-1">
+                        <span>✅</span> {fetchResult.label} を特定しました
+                      </p>
+                    )}
+                    {fetchResult.type === 'none' && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1">
+                        <span>❌</span> 場所を特定できませんでした。手動で入力してください
+                      </p>
+                    )}
+                    {fetchResult.type === 'too_many' && (
+                      <p className="text-xs text-slate-400 flex items-center gap-1">
+                        <span>⚠️</span> 候補が多すぎて特定できませんでした
+                      </p>
+                    )}
+                    {fetchResult.type === 'error' && (
+                      <p className="text-xs text-accent flex items-center gap-1">
+                        <span>⚠️</span> 取得エラー。ネットワークを確認してください
+                      </p>
+                    )}
+                    {fetchResult.type === 'multiple' && (
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1.5">候補が複数あります。選択してください：</p>
+                        <div className="flex flex-col gap-1.5">
+                          {fetchResult.candidates.map((c, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => {
+                                set('maps_url', c.url);
+                                setFetchResult({ type: 'found', label: c.label, url: c.url });
+                              }}
+                              className="text-left px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 hover:border-sky hover:bg-sky-light transition-colors"
+                            >
+                              📍 {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}
