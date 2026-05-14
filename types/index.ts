@@ -21,3 +21,11 @@ export type TripItem = {
 };
 
 export type NewTripItem = Omit<TripItem, 'id' | 'created_at'>;
+
+export type PlacePhoto = {
+  id: number;
+  trip_item_id: number;
+  storage_path: string;
+  order_index: number;
+  created_at: string;
+};

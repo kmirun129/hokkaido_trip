@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { TripItem, PlaceType } from "@/types";
+import PhotoGallery from "./PhotoGallery";
 
 const TYPE_CONFIG: Record<PlaceType, { icon: string; color: string; bg: string }> = {
   観光: { icon: '🏔️', color: 'text-sky',     bg: 'bg-sky-light' },
@@ -23,6 +27,7 @@ export default function PlaceCard({
 }: Props) {
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
+  const [showPhotos, setShowPhotos] = useState(false);
 
   return (
     <div id={`place-${item.id}`} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -76,7 +81,7 @@ export default function PlaceCard({
 
       {/* サブ情報（空欄は自動非表示） */}
       {(item.description || item.business_hours || item.memo || item.maps_url) && (
-        <div className="px-4 pb-4 space-y-2 border-t border-slate-50 pt-3">
+        <div className="px-4 pb-3 space-y-2 border-t border-slate-50 pt-3">
           {item.description && (
             <p className="text-sm text-slate-600 leading-relaxed">{item.description}</p>
           )}
@@ -104,6 +109,20 @@ export default function PlaceCard({
           )}
         </div>
       )}
+
+      {/* 写真トグル */}
+      <div className="border-t border-slate-50">
+        <button
+          onClick={() => setShowPhotos((v) => !v)}
+          className="w-full px-4 py-2.5 flex items-center gap-2 text-xs text-slate-400 hover:text-sky hover:bg-sky-light/50 transition-colors"
+        >
+          <span>📷</span>
+          <span>{showPhotos ? '写真を閉じる' : '写真を見る・追加する'}</span>
+          <span className="ml-auto">{showPhotos ? '▲' : '▼'}</span>
+        </button>
+      </div>
+
+      {showPhotos && <PhotoGallery tripItemId={item.id} />}
     </div>
   );
 }
