@@ -37,7 +37,7 @@ export type TripSettings = {
   duration_label: string;
   tags: string[];
   hero_image_path: string | null;
-  start_date: string;
+  start_date: string | null;
   updated_at: string;
 };
 

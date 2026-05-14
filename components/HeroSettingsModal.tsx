@@ -57,11 +57,22 @@ export default function HeroSettingsModal({ settings, onClose, onSaved }: Props)
   const handleSave = async () => {
     setSaving(true);
     const tags = tagsText.split(/[,、]/).map((s) => s.trim()).filter(Boolean);
-    await getClient()
+    const { error } = await getClient()
       .from("trip_settings")
-      .update({ title: title.trim() || "旅行", subtitle: subtitle.trim(), duration_label: duration.trim(), tags, hero_image_path: heroPath, start_date: startDate || undefined })
+      .update({
+        title: title.trim() || "旅行",
+        subtitle: subtitle.trim(),
+        duration_label: duration.trim(),
+        tags,
+        hero_image_path: heroPath,
+        start_date: startDate || null,
+      })
       .eq("id", 1);
     setSaving(false);
+    if (error) {
+      alert(`保存エラー: ${error.message}`);
+      return;
+    }
     await onSaved();
   };
 

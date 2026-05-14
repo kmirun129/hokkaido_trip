@@ -219,15 +219,38 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
         return;
       }
 
-      // importance スコア降順でソート
-      data.sort((a, b) => b.importance - a.importance);
-
       // 名称なし（座標のみ）の結果は除外
       const named = data.filter((p) => p.name?.trim());
       if (named.length === 0) {
         setFetchResult({ type: 'none' });
         return;
       }
+
+      // OSM カテゴリの「主要エンティティらしさ」ボーナス（同名の駅プラットフォーム等を下位に）
+      const categoryBonus = (cls: string, t: string): number => {
+        const high = new Set([
+          'aeroway/aerodrome', 'aeroway/terminal',
+          'tourism/zoo', 'tourism/museum', 'tourism/attraction', 'tourism/theme_park',
+          'tourism/hotel', 'tourism/hostel', 'tourism/guest_house', 'tourism/viewpoint',
+          'amenity/restaurant', 'amenity/cafe', 'amenity/fast_food', 'amenity/bar', 'amenity/pub',
+          'shop/car_rental', 'shop/department_store', 'shop/mall', 'shop/supermarket',
+          'leisure/park', 'leisure/garden',
+        ]);
+        const low = new Set([
+          'railway/stop', 'railway/halt', 'highway/bus_stop',
+          'building/train_station', 'building/yes',
+          'public_transport/platform', 'public_transport/stop_position',
+        ]);
+        if (high.has(`${cls}/${t}`)) return 0.1;
+        if (low.has(`${cls}/${t}`)) return -0.15;
+        return 0;
+      };
+
+      // importance + カテゴリボーナスで降順ソート
+      named.sort((a, b) =>
+        (b.importance + categoryBonus(b.class, b.type)) -
+        (a.importance + categoryBonus(a.class, a.type))
+      );
 
       // Google Maps の Place カード（星評価・口コミ）を開かせるには「検索」させる必要がある。
       // 名前だけだと複数候補になるため、施設名＋市町村＋都道府県の最小限で絞り込み、
