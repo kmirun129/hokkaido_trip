@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { TripItem, NewTripItem, PlacePhoto } from "@/types";
+import { TripItem, NewTripItem, PlacePhoto, TripSettings, NewTripSettings } from "@/types";
 
 type NewPlacePhoto = Omit<PlacePhoto, 'id' | 'created_at'>;
 
@@ -16,6 +16,12 @@ type Database = {
         Row: PlacePhoto;
         Insert: NewPlacePhoto;
         Update: Partial<NewPlacePhoto>;
+        Relationships: [];
+      };
+      trip_settings: {
+        Row: TripSettings;
+        Insert: Partial<NewTripSettings> & { id?: number };
+        Update: Partial<NewTripSettings>;
         Relationships: [];
       };
     };

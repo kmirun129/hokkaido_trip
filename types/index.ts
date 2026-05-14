@@ -29,3 +29,15 @@ export type PlacePhoto = {
   order_index: number;
   created_at: string;
 };
+
+export type TripSettings = {
+  id: number;
+  title: string;
+  subtitle: string;
+  duration_label: string;
+  tags: string[];
+  hero_image_path: string | null;
+  updated_at: string;
+};
+
+export type NewTripSettings = Omit<TripSettings, 'id' | 'updated_at'>;

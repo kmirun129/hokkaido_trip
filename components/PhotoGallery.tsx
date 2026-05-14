@@ -11,12 +11,12 @@ function publicUrl(path: string) {
   return getClient().storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
-type Props = { tripItemId: number };
+type Props = { tripItemId: number; editable: boolean };
 
-export default function PhotoGallery({ tripItemId }: Props) {
+export default function PhotoGallery({ tripItemId, editable }: Props) {
   const [photos, setPhotos] = useState<PlacePhoto[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,20 +50,22 @@ export default function PhotoGallery({ tripItemId }: Props) {
           order_index: base + (i + 1) * 10,
         });
       } catch {
-        // skip failed uploads silently
+        // skip failed
       }
     }
     await fetchPhotos();
     setUploading(false);
   };
 
-  const handleDelete = async (photo: PlacePhoto) => {
+  const handleDelete = async (photo: PlacePhoto, e: React.MouseEvent) => {
+    e.stopPropagation();
     await getClient().storage.from(BUCKET).remove([photo.storage_path]);
     await getClient().from("place_photos").delete().eq("id", photo.id);
     setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
   };
 
-  const swap = async (i: number, j: number) => {
+  const swap = async (i: number, j: number, e: React.MouseEvent) => {
+    e.stopPropagation();
     const a = photos[i], b = photos[j];
     if (!a || !b) return;
     await Promise.all([
@@ -73,8 +75,11 @@ export default function PhotoGallery({ tripItemId }: Props) {
     await fetchPhotos();
   };
 
+  // Hide entirely if no photos and not editable
+  if (photos.length === 0 && !editable) return null;
+
   return (
-    <div className="px-4 pb-4 pt-2 border-t border-slate-50">
+    <div className="relative">
       <input
         ref={inputRef}
         type="file"
@@ -85,61 +90,94 @@ export default function PhotoGallery({ tripItemId }: Props) {
       />
 
       {photos.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="flex gap-1 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
           {photos.map((photo, idx) => (
-            <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 group">
+            <div
+              key={photo.id}
+              className="snap-center flex-shrink-0 w-full aspect-[16/10] relative bg-slate-100 cursor-pointer"
+              onClick={() => setLightbox(idx)}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={publicUrl(photo.storage_path)}
                 alt=""
-                className="w-full h-full object-cover cursor-pointer"
-                onClick={() => setLightbox(publicUrl(photo.storage_path))}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-center px-1.5 py-1">
-                <button
-                  onClick={() => swap(idx, idx - 1)}
-                  disabled={idx === 0}
-                  className="text-white disabled:opacity-25 text-xs leading-none px-1 py-0.5 rounded hover:bg-white/20"
-                >◀</button>
-                <button
-                  onClick={() => handleDelete(photo)}
-                  className="text-red-300 hover:text-white text-xs leading-none px-1 py-0.5 rounded hover:bg-red-500/60"
-                >✕</button>
-                <button
-                  onClick={() => swap(idx, idx + 1)}
-                  disabled={idx === photos.length - 1}
-                  className="text-white disabled:opacity-25 text-xs leading-none px-1 py-0.5 rounded hover:bg-white/20"
-                >▶</button>
-              </div>
+              {photos.length > 1 && (
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/50 text-white text-[10px] font-semibold backdrop-blur-sm">
+                  {idx + 1} / {photos.length}
+                </div>
+              )}
+              {editable && (
+                <div className="absolute bottom-2 left-2 right-2 flex justify-between items-center gap-2">
+                  <button
+                    onClick={(e) => swap(idx, idx - 1, e)}
+                    disabled={idx === 0}
+                    className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs disabled:opacity-30 hover:bg-black/70"
+                  >◀</button>
+                  <button
+                    onClick={(e) => handleDelete(photo, e)}
+                    className="w-8 h-8 rounded-full bg-red-500/80 backdrop-blur-sm text-white text-xs hover:bg-red-500"
+                  >🗑</button>
+                  <button
+                    onClick={(e) => swap(idx, idx + 1, e)}
+                    disabled={idx === photos.length - 1}
+                    className="w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm text-white text-xs disabled:opacity-30 hover:bg-black/70"
+                  >▶</button>
+                </div>
+              )}
             </div>
           ))}
           {uploading && (
-            <div className="aspect-square rounded-xl bg-slate-100 flex items-center justify-center">
+            <div className="snap-center flex-shrink-0 w-full aspect-[16/10] bg-slate-100 flex items-center justify-center">
               <span className="text-xs text-slate-400 animate-pulse">追加中...</span>
             </div>
           )}
         </div>
       )}
 
-      <button
-        onClick={() => inputRef.current?.click()}
-        disabled={uploading}
-        className="w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-sm hover:border-sky hover:text-sky transition-colors disabled:opacity-50"
-      >
-        {uploading ? "アップロード中..." : "📷 写真を追加"}
-      </button>
+      {editable && (
+        <div className="px-4 py-2">
+          <button
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs hover:border-sky hover:text-sky transition-colors disabled:opacity-50"
+          >
+            {uploading ? "アップロード中..." : "📷 写真を追加"}
+          </button>
+        </div>
+      )}
 
-      {lightbox && (
+      {lightbox !== null && photos[lightbox] && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={lightbox} alt="" className="max-w-full max-h-full object-contain rounded-xl" />
+          <img
+            src={publicUrl(photos[lightbox].storage_path)}
+            alt=""
+            className="max-w-full max-h-full object-contain rounded-xl"
+          />
+          {photos.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((lightbox - 1 + photos.length) % photos.length); }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white text-xl"
+              >◀</button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((lightbox + 1) % photos.length); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white text-xl"
+              >▶</button>
+            </>
+          )}
           <button
-            className="absolute top-5 right-5 text-white text-2xl leading-none w-9 h-9 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
+            className="absolute top-5 right-5 text-white text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
             onClick={() => setLightbox(null)}
           >✕</button>
+          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 text-white text-xs">
+            {lightbox + 1} / {photos.length}
+          </div>
         </div>
       )}
     </div>

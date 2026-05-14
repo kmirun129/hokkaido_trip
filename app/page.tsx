@@ -6,7 +6,9 @@ import DayTabs from "@/components/DayTabs";
 import PlaceCard from "@/components/PlaceCard";
 import TransportBar from "@/components/TransportBar";
 import ItemModal from "@/components/ItemModal";
+import ModeToggle from "@/components/ModeToggle";
 import { getClient } from "@/lib/supabase";
+import { useMode } from "@/lib/mode";
 import { TripItem, NewTripItem } from "@/types";
 
 type ModalMode =
@@ -15,6 +17,8 @@ type ModalMode =
   | { type: 'edit'; item: TripItem };
 
 export default function Home() {
+  const { mode } = useMode();
+  const isEdit = mode === "edit";
   const [activeDay, setActiveDay] = useState(1);
   const [items, setItems] = useState<TripItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -76,6 +80,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <ModeToggle />
       <Header />
       <DayTabs activeDay={activeDay} onDayChange={handleDayChange} />
 
@@ -97,21 +102,23 @@ export default function Home() {
       )}
 
       {/* メインコンテンツ */}
-      <main className="max-w-2xl mx-auto px-4 pb-32">
+      <main className={`max-w-2xl mx-auto px-4 ${isEdit ? 'pb-32' : 'pb-12'}`}>
         {loading ? (
           <div className="text-center py-20 text-slate-400 text-sm">読み込み中...</div>
         ) : items.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-5xl mb-4">🗺️</div>
             <p className="text-slate-400 text-sm mb-6">まだプランがありません</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
-                className="px-5 py-2.5 bg-sky text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-sky/90 transition-colors"
-              >
-                ＋ 場所を追加
-              </button>
-            </div>
+            {isEdit && (
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
+                  className="px-5 py-2.5 bg-sky text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-sky/90 transition-colors"
+                >
+                  ＋ 場所を追加
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-1 pt-2">
@@ -146,21 +153,23 @@ export default function Home() {
         )}
       </main>
 
-      {/* 固定追加ボタン */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-30">
-        <button
-          onClick={() => setModal({ type: 'add-transport', day: activeDay, orderIndex: nextOrder() })}
-          className="flex items-center gap-2 px-4 py-3 bg-white text-slate-600 rounded-2xl shadow-lg border border-slate-100 text-sm font-medium hover:bg-slate-50 transition-colors"
-        >
-          🚗 移動を追加
-        </button>
-        <button
-          onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
-          className="flex items-center gap-2 px-5 py-3 bg-sky text-white rounded-2xl shadow-lg text-sm font-semibold hover:bg-sky/90 transition-colors"
-        >
-          ＋ 場所を追加
-        </button>
-      </div>
+      {/* 固定追加ボタン（編集モードのみ） */}
+      {isEdit && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-30">
+          <button
+            onClick={() => setModal({ type: 'add-transport', day: activeDay, orderIndex: nextOrder() })}
+            className="flex items-center gap-2 px-4 py-3 bg-white text-slate-600 rounded-2xl shadow-lg border border-slate-100 text-sm font-medium hover:bg-slate-50 transition-colors"
+          >
+            🚗 移動を追加
+          </button>
+          <button
+            onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
+            className="flex items-center gap-2 px-5 py-3 bg-sky text-white rounded-2xl shadow-lg text-sm font-semibold hover:bg-sky/90 transition-colors"
+          >
+            ＋ 場所を追加
+          </button>
+        </div>
+      )}
 
       {/* モーダル */}
       {modal && (

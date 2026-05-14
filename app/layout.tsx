@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ModeProvider } from "@/lib/mode";
 
 export const metadata: Metadata = {
   title: "北海道旅行プラン",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className="min-h-screen">{children}</body>
+      <body className="min-h-screen">
+        <ModeProvider>{children}</ModeProvider>
+      </body>
     </html>
   );
 }

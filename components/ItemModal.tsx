@@ -6,6 +6,10 @@ import { TripItem, PlaceType, TransportMode, NewTripItem } from "@/types";
 const PLACE_TYPES: PlaceType[] = ['観光', '食事', '宿泊', '体験', 'その他'];
 const TRANSPORT_MODES: TransportMode[] = ['徒歩', '車', '電車', 'バス', '飛行機', 'タクシー', 'フェリー'];
 
+const DURATION_CHIPS = ['15分', '30分', '45分', '1時間', '1時間30分', '2時間', '半日', '1日'];
+const TRANSPORT_DURATION_CHIPS = ['約5分', '約10分', '約15分', '約20分', '約30分', '約1時間', '約1時間30分', '約2時間'];
+const HOURS_CHIPS = ['9:00〜17:00', '10:00〜21:00', '11:00〜22:00', '11:30〜14:30, 17:00〜22:00', '24時間営業', '定休日: 月曜'];
+
 type ModalMode =
   | { type: 'add-place'; day: number; orderIndex: number }
   | { type: 'add-transport'; day: number; orderIndex: number }
@@ -17,15 +21,15 @@ type Props = {
   onClose: () => void;
 };
 
-// コンポーネント外で定義することでre-render時の再マウントを防ぐ
 function Field({
-  label, value, onChange, placeholder, multiline,
+  label, value, onChange, placeholder, multiline, type = "text",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  type?: string;
 }) {
   return (
     <div>
@@ -40,6 +44,40 @@ function Field({
         />
       ) : (
         <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+        />
+      )}
+    </div>
+  );
+}
+
+function ChipPicker({
+  label, value, onChange, chips, placeholder, multiline = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  chips: string[];
+  placeholder?: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-semibold text-slate-500 mb-1">{label}</label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          rows={2}
+          className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40 resize-none"
+        />
+      ) : (
+        <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -47,6 +85,25 @@ function Field({
           className="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
         />
       )}
+      <div className="flex flex-wrap gap-1.5 mt-2">
+        {chips.map((c) => {
+          const active = value === c;
+          return (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onChange(active ? '' : c)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                active
+                  ? 'bg-sky text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {c}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -135,10 +192,11 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                   ))}
                 </div>
               </div>
-              <Field
+              <ChipPicker
                 label="所要時間"
                 value={form.transport_duration ?? ''}
                 onChange={(v) => set('transport_duration', v)}
+                chips={TRANSPORT_DURATION_CHIPS}
                 placeholder="例: 約30分"
               />
               <Field
@@ -178,15 +236,17 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 <Field
                   label="時刻"
+                  type="time"
                   value={form.time ?? ''}
                   onChange={(v) => set('time', v)}
-                  placeholder="例: 10:00"
+                  placeholder="--:--"
                 />
-                <Field
+                <ChipPicker
                   label="所要時間"
                   value={form.duration ?? ''}
                   onChange={(v) => set('duration', v)}
-                  placeholder="例: 約1時間"
+                  chips={DURATION_CHIPS}
+                  placeholder="例: 1時間"
                 />
               </div>
               <Field
@@ -196,10 +256,11 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                 placeholder="場所の説明や見どころ"
                 multiline
               />
-              <Field
+              <ChipPicker
                 label="営業時間"
                 value={form.business_hours ?? ''}
                 onChange={(v) => set('business_hours', v)}
+                chips={HOURS_CHIPS}
                 placeholder="例: 9:00〜17:00"
               />
               <Field
