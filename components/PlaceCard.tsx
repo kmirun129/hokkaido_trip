@@ -111,8 +111,8 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* マップリンク（常に表示） */}
-      {item.name && (
+      {/* マップリンク */}
+      {item.name && (item.maps_url || isEdit) && (
         <div className="px-4 pb-4">
           {item.maps_url ? (
             <a

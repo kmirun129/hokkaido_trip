@@ -350,20 +350,24 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                         <span>✅</span> {fetchResult.label} を特定しました
                       </p>
                     )}
-                    {fetchResult.type === 'none' && (
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
-                        <span>❌</span> 場所を特定できませんでした。手動で入力してください
-                      </p>
-                    )}
-                    {fetchResult.type === 'too_many' && (
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
-                        <span>⚠️</span> 候補が多すぎて特定できませんでした
-                      </p>
-                    )}
-                    {fetchResult.type === 'error' && (
-                      <p className="text-xs text-accent flex items-center gap-1">
-                        <span>⚠️</span> 取得エラー。ネットワークを確認してください
-                      </p>
+                    {(fetchResult.type === 'none' || fetchResult.type === 'too_many' || fetchResult.type === 'error') && (
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs text-slate-400">
+                          {fetchResult.type === 'none' && '場所を特定できませんでした'}
+                          {fetchResult.type === 'too_many' && '候補が多すぎて特定できませんでした'}
+                          {fetchResult.type === 'error' && '取得エラー。ネットワークを確認してください'}
+                        </p>
+                        {form.name?.trim() && (
+                          <a
+                            href={`https://maps.google.com/?q=${encodeURIComponent(form.name.trim())}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-shrink-0 text-[11px] text-sky font-semibold hover:underline"
+                          >
+                            🔍 Googleマップで探す
+                          </a>
+                        )}
+                      </div>
                     )}
                     {fetchResult.type === 'multiple' && (
                       <div>
