@@ -7,7 +7,6 @@ import DayTheme from "@/components/DayTheme";
 import PlaceCard from "@/components/PlaceCard";
 import TransportBar from "@/components/TransportBar";
 import ItemModal from "@/components/ItemModal";
-import ModeToggle from "@/components/ModeToggle";
 import { getClient } from "@/lib/supabase";
 import { useMode } from "@/lib/mode";
 import { TripItem, NewTripItem } from "@/types";
@@ -86,7 +85,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <ModeToggle />
       <Header />
       <DayTabs activeDay={activeDay} onDayChange={handleDayChange} />
 
