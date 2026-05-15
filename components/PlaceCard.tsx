@@ -4,16 +4,16 @@ import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
-import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
+import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock, Compass, UtensilsCrossed, BedDouble, Mountain, Car, Tag, LucideIcon } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; emoji: string }> = {
-  観光:   { color: 'text-sky',       bg: 'bg-sky-light',      emoji: '🗺️' },
-  グルメ: { color: 'text-accent',    bg: 'bg-accent-light',   emoji: '🍽️' },
-  宿泊:   { color: 'text-lavender',  bg: 'bg-lavender-light', emoji: '🏨' },
-  レジャー:{ color: 'text-nature',   bg: 'bg-nature-light',   emoji: '🎿' },
-  移動:   { color: 'text-slate-500', bg: 'bg-slate-100',      emoji: '🚗' },
-  その他: { color: 'text-slate-400', bg: 'bg-slate-50',       emoji: '📌' },
+const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; Icon: LucideIcon }> = {
+  観光:    { color: 'text-sky',       bg: 'bg-sky-light',      Icon: Compass },
+  グルメ:  { color: 'text-accent',    bg: 'bg-accent-light',   Icon: UtensilsCrossed },
+  宿泊:    { color: 'text-lavender',  bg: 'bg-lavender-light', Icon: BedDouble },
+  レジャー:{ color: 'text-nature',    bg: 'bg-nature-light',   Icon: Mountain },
+  移動:    { color: 'text-slate-500', bg: 'bg-slate-100',      Icon: Car },
+  その他:  { color: 'text-slate-400', bg: 'bg-slate-50',       Icon: Tag },
 };
 
 type Props = {
@@ -61,7 +61,7 @@ export default function PlaceCard({
                 </span>
               )}
               <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
-              <span className="text-[12px] leading-none select-none">{cfg.emoji}</span>
+              <cfg.Icon size={11} className={`flex-shrink-0 ${cfg.color}`} />
               <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
             </div>
             {item.duration && (
