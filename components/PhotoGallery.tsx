@@ -21,29 +21,29 @@ function getLayout(count: number): Layout {
       return { container: 'aspect-[16/10]', cells: [''] };
     case 2:
       return {
-        container: 'grid grid-cols-2 gap-0.5 aspect-[2/1]',
+        container: 'grid grid-cols-2 gap-[3px] aspect-[2/1]',
         cells: ['', ''],
       };
     case 3:
       // 左に大きな1枚 + 右に縦2枚
       return {
-        container: 'grid grid-cols-3 grid-rows-2 gap-0.5 aspect-[3/2]',
+        container: 'grid grid-cols-3 grid-rows-2 gap-[3px] aspect-[3/2]',
         cells: ['col-span-2 row-span-2', '', ''],
       };
     case 4:
       return {
-        container: 'grid grid-cols-2 grid-rows-2 gap-0.5 aspect-square',
+        container: 'grid grid-cols-2 grid-rows-2 gap-[3px] aspect-square',
         cells: ['', '', '', ''],
       };
     case 5:
       // 上行2枚（各50%幅）+ 下行3枚（各33%幅）
       return {
-        container: 'grid grid-cols-6 grid-rows-2 gap-0.5 aspect-[6/5]',
+        container: 'grid grid-cols-6 grid-rows-2 gap-[3px] aspect-[6/5]',
         cells: ['col-span-3', 'col-span-3', 'col-span-2', 'col-span-2', 'col-span-2'],
       };
     default: // 6 cells (6枚以上)
       return {
-        container: 'grid grid-cols-3 grid-rows-2 gap-0.5 aspect-[3/2]',
+        container: 'grid grid-cols-3 grid-rows-2 gap-[3px] aspect-[3/2]',
         cells: ['', '', '', '', '', ''],
       };
   }
@@ -145,7 +145,7 @@ export default function PhotoGallery({ tripItemId, editable, onCountChange }: Pr
       />
 
       {visiblePhotos.length > 0 && (
-        <div className={`relative ${layout.container}`}>
+        <div className={`relative rounded-xl overflow-hidden ${layout.container}`}>
           {visiblePhotos.map((photo, idx) => {
             const isLast = idx === displayCount - 1;
             const showOverlay = isLast && hiddenCount > 0;

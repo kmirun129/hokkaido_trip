@@ -106,12 +106,14 @@ export default function PlaceCard({
         </div>
       </div>
 
-      {/* ── 中央: 写真ギャラリー ── */}
-      <PhotoGallery tripItemId={item.id} editable={isEdit} />
+      {/* ── 中央: 写真ギャラリー（左右12px内側、上下12px余白、角丸コンテナ） ── */}
+      <div className="px-3 mt-3">
+        <PhotoGallery tripItemId={item.id} editable={isEdit} />
+      </div>
 
       {/* ── 下部: 詳細情報 ── */}
       {hasSubInfo && (
-        <div className="px-4 pb-3 pt-3 space-y-2 border-t border-slate-50">
+        <div className="px-4 pb-3 pt-3 mt-1 space-y-2 border-t border-slate-50">
           {item.description && (
             <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
           )}
