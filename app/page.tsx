@@ -129,7 +129,7 @@ export default function Home() {
             )}
           </div>
         ) : (
-          <div className="space-y-2 pt-3">
+          <div className="space-y-1 pt-2">
             {items.map((item, idx) => {
               const pos = items.indexOf(item);
               if (item.item_type === 'transport') {
