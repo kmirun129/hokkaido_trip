@@ -4,16 +4,16 @@ import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
-import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock, Camera, UtensilsCrossed, BedDouble, Snowflake, Car, Tag, LucideIcon } from "lucide-react";
+import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; Icon: LucideIcon }> = {
-  観光:    { color: 'text-sky',       bg: 'bg-sky-light',      Icon: Camera },
-  グルメ:  { color: 'text-accent',    bg: 'bg-accent-light',   Icon: UtensilsCrossed },
-  宿泊:    { color: 'text-lavender',  bg: 'bg-lavender-light', Icon: BedDouble },
-  レジャー:{ color: 'text-nature',    bg: 'bg-nature-light',   Icon: Snowflake },
-  移動:    { color: 'text-slate-500', bg: 'bg-slate-100',      Icon: Car },
-  その他:  { color: 'text-slate-400', bg: 'bg-slate-50',       Icon: Tag },
+const TYPE_CONFIG: Record<PlaceType, { color: string; gradient: string }> = {
+  観光:    { color: 'text-sky',       gradient: 'linear-gradient(135deg, #bddff5 0%, #e8f4fc 100%)' },
+  グルメ:  { color: 'text-accent',    gradient: 'linear-gradient(135deg, #ffcdb5 0%, #ffeee6 100%)' },
+  宿泊:    { color: 'text-lavender',  gradient: 'linear-gradient(135deg, #d3c2ee 0%, #f0eaf9 100%)' },
+  レジャー:{ color: 'text-nature',    gradient: 'linear-gradient(135deg, #b2d9b4 0%, #e4f4e5 100%)' },
+  移動:    { color: 'text-slate-500', gradient: 'linear-gradient(135deg, #c8d4df 0%, #edf1f5 100%)' },
+  その他:  { color: 'text-slate-400', gradient: 'linear-gradient(135deg, #dde3ea 0%, #f4f6f8 100%)' },
 };
 
 type Props = {
@@ -54,17 +54,17 @@ export default function PlaceCard({
         {/* Row 1: チップ（時刻+カテゴリ） + 右端ボタン */}
         <div className="flex items-center justify-between gap-2 mb-2.5">
           <div className="flex items-center gap-2 min-w-0">
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0 ${cfg.bg}`}>
+            <div
+              className="inline-flex items-center gap-[7px] px-2.5 py-[5px] rounded-lg flex-shrink-0"
+              style={{ background: cfg.gradient }}
+            >
               {item.time && (
-                <span className={`text-[14px] font-bold tabular-nums leading-none ${cfg.color}`}>
+                <span className={`text-[13px] font-bold tabular-nums leading-none ${cfg.color}`}>
                   {item.time}
                 </span>
               )}
-              <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
-              <span className={`inline-flex items-center gap-[3px]`}>
-                <cfg.Icon size={13} className={`flex-shrink-0 ${cfg.color}`} />
-                <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
-              </span>
+              <span className="text-[9px] text-slate-400 leading-none select-none">·</span>
+              <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
             </div>
             {item.duration && (
               <span className="text-[11px] text-slate-400 flex-shrink-0">{item.duration}</span>
