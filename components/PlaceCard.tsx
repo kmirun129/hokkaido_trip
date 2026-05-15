@@ -52,23 +52,23 @@ export default function PlaceCard({
       <div className="px-4 pt-4 pb-3">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2 flex-wrap mb-1">
-              {item.time && (
-                <span className={`text-[15px] font-semibold tabular-nums leading-none ${cfg.color}`}>
-                  {item.time}
-                </span>
-              )}
-              <span className={`text-[12px] font-medium leading-none ${cfg.color}`}>
-                {type}
-              </span>
+            {/* Row 1: 時刻＋カテゴリを一体コンテナで包む */}
+            <div className="flex items-center gap-2 mb-2.5">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${cfg.bg}`}>
+                {item.time && (
+                  <span className={`text-[14px] font-bold tabular-nums leading-none ${cfg.color}`}>
+                    {item.time}
+                  </span>
+                )}
+                <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
+                <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
+              </div>
               {item.duration && (
-                <>
-                  <span className="text-slate-300 text-[11px] leading-none">·</span>
-                  <span className="text-[11px] text-slate-400 leading-none">{item.duration}</span>
-                </>
+                <span className="text-[11px] text-slate-400">{item.duration}</span>
               )}
             </div>
-            <h3 className="text-xl font-bold text-slate-800 leading-tight break-words">
+            {/* Row 2: 場所名（主役） */}
+            <h3 className="text-[1.2rem] font-bold tracking-tight text-slate-900 leading-snug break-words">
               {item.name ?? '（名称未設定）'}
             </h3>
           </div>
