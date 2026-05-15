@@ -61,7 +61,7 @@ export default function PlaceCard({
                 </span>
               )}
               <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
-              <cfg.Icon size={11} className={`flex-shrink-0 ${cfg.color}`} />
+              <cfg.Icon size={14} className={`flex-shrink-0 ${cfg.color}`} />
               <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
             </div>
             {item.duration && (
