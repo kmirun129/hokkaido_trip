@@ -27,3 +27,10 @@ body {
 .font-mincho {
   font-family: var(--font-mincho), 'Hiragino Mincho ProN', 'Yu Mincho', serif;
 }
+
+.title-gray-gradient {
+  background: linear-gradient(135deg, #555555 0%, #A8A8A8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

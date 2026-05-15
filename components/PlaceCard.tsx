@@ -101,7 +101,7 @@ export default function PlaceCard({
         </div>
 
         {/* Row 2: 場所名（全幅・明朝体） */}
-        <h3 className="font-mincho text-[22px] font-extrabold tracking-tight leading-tight break-words text-[#222222]">
+        <h3 className="font-mincho title-gray-gradient text-[22px] font-extrabold tracking-tight leading-tight break-words">
           {item.name ?? '（名称未設定）'}
         </h3>
       </div>
