@@ -14,11 +14,10 @@ const MODE_ICON: Record<TransportMode, React.ElementType> = {
   フェリー: Ship,
 };
 
-// ドット列コンポーネント
 function Dots() {
   return (
-    <div className="flex flex-col items-center gap-[5px] py-1">
-      {[0, 1, 2, 3].map((i) => (
+    <div className="flex flex-col items-center gap-[4px] py-0.5">
+      {[0, 1, 2].map((i) => (
         <div key={i} className="w-[3px] h-[3px] rounded-full bg-slate-300" />
       ))}
     </div>
@@ -34,7 +33,7 @@ export default function TransportBar({ item, onEdit, onDelete }: Props) {
   const Icon = MODE_ICON[transportMode];
 
   return (
-    <div className="flex flex-col items-center py-2">
+    <div className="flex flex-col items-center py-0">
       <Dots />
 
       {/* 中央チップ */}
