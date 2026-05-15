@@ -1,7 +1,16 @@
 import type { Metadata, Viewport } from "next";
+import { Shippori_Mincho_B1 } from "next/font/google";
 import "./globals.css";
 import { ModeProvider } from "@/lib/mode";
 import { SettingsProvider } from "@/lib/settings";
+
+const shipporiMincho = Shippori_Mincho_B1({
+  subsets: ["latin"],
+  weight: ["700", "800"],
+  variable: "--font-mincho",
+  display: "swap",
+  preload: false,
+});
 
 export const metadata: Metadata = {
   title: "北海道旅行プラン",
@@ -19,7 +28,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" className={shipporiMincho.variable}>
       <body className="min-h-screen">
         <SettingsProvider>
           <ModeProvider>{children}</ModeProvider>

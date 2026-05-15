@@ -71,6 +71,7 @@ export default function PlaceCard({
             <h3
               className="text-2xl font-extrabold tracking-tight leading-tight break-words"
               style={{
+                fontFamily: 'var(--font-mincho)',
                 background: cfg.gradient,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
