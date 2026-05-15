@@ -59,19 +59,10 @@ function categoryBonus(cls: string, t: string): number {
   return 0;
 }
 
-function buildMapsUrl(p: NominatimResult): string {
-  const parts = p.display_name
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s) =>
-      s &&
-      s !== '日本' &&
-      !s.endsWith('振興局') &&
-      !s.endsWith('地方') &&
-      !/^\d{3}-?\d{4}$/.test(s)
-    );
-  const query = parts.join(' ');
-  return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${p.lat},${p.lon},17z`;
+// Google Maps の検索 URL を生成。クエリにはユーザーの原文をそのまま渡し、
+// Nominatim から得た座標で地図ビューポートを固定して一意な場所カードを開かせる。
+function buildMapsUrl(userQuery: string, p: NominatimResult): string {
+  return `https://www.google.com/maps/search/${encodeURIComponent(userQuery.trim())}/@${p.lat},${p.lon},17z`;
 }
 
 function candidateLabel(p: NominatimResult): string {
@@ -104,54 +95,16 @@ async function callNominatim(query: string, hokkaidoBounded: boolean): Promise<N
   return (await res.json()) as NominatimResult[];
 }
 
-// 店舗の支店サフィックスや括弧内補足を取り除いたバリエーションを生成。
-// 例: "千秋庵 新千歳空港店" → ["千秋庵 新千歳空港店", "千秋庵", ...]
-function nameVariations(name: string): string[] {
-  const trimmed = name.trim();
-  const variations = new Set<string>([trimmed]);
-
-  // 括弧内（半角・全角）を削除
-  const noParens = trimmed.replace(/[（(][^）)]*[）)]/g, '').trim();
-  if (noParens) variations.add(noParens);
-
-  // 末尾の支店名サフィックスを削除
-  const suffixPatterns = [
-    /\s*[・・\s][^\s・・]*(本店|支店|店)\s*$/, // 「・〇〇店」「 〇〇店」
-    /(本店|支店)\s*$/,
-  ];
-  for (const base of [trimmed, noParens]) {
-    if (!base) continue;
-    for (const re of suffixPatterns) {
-      const stripped = base.replace(re, '').trim();
-      if (stripped && stripped !== base) variations.add(stripped);
-    }
-  }
-
-  return Array.from(variations);
-}
 
 export async function fetchMapsCandidate(name: string): Promise<MapsFetchResult> {
   const trimmed = name.trim();
   if (!trimmed) return { type: 'none' };
 
   try {
-    let data: NominatimResult[] = [];
-
-    // ① 北海道バウンディングボックス内で原文検索
-    data = await callNominatim(`${trimmed} 北海道`, true);
-
-    // ② 縛りなしで原文検索
+    // 北海道バウンディングボックス内で検索 → なければ縛りなしで再検索
+    // 入力を加工せず原文のみで検索（変種マッチで誤った場所を返すのを防ぐ）
+    let data = await callNominatim(`${trimmed} 北海道`, true);
     if (data.length === 0) data = await callNominatim(trimmed, false);
-
-    // ③ 支店サフィックス等を除いたバリエーションで再検索
-    if (data.length === 0) {
-      const variations = nameVariations(trimmed).filter((v) => v !== trimmed);
-      for (const variant of variations) {
-        data = await callNominatim(`${variant} 北海道`, true);
-        if (data.length === 0) data = await callNominatim(variant, false);
-        if (data.length > 0) break;
-      }
-    }
 
     if (data.length === 0) return { type: 'none' };
 
@@ -171,14 +124,14 @@ export async function fetchMapsCandidate(name: string): Promise<MapsFetchResult>
       return {
         type: 'found',
         label: named[0].display_name.split(',')[0].trim() || named[0].name,
-        url: buildMapsUrl(named[0]),
+        url: buildMapsUrl(trimmed, named[0]),
       };
     } else if (named.length >= 5) {
       return { type: 'too_many' };
     } else {
       return {
         type: 'multiple',
-        candidates: named.map((p) => ({ label: candidateLabel(p), url: buildMapsUrl(p) })),
+        candidates: named.map((p) => ({ label: candidateLabel(p), url: buildMapsUrl(trimmed, p) })),
       };
     }
   } catch {

@@ -153,13 +153,14 @@ function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: Su
       update(task.id, { maps_url: result.url });
       setFetchStates((s) => ({ ...s, [task.id]: 'found' }));
     } else if (result.type === 'multiple') {
-      // 複数候補があれば最上位を採用（個別UIは持たずシンプルに）
+      // 複数候補があれば最上位を採用
       update(task.id, { maps_url: result.candidates[0].url });
       setFetchStates((s) => ({ ...s, [task.id]: 'found' }));
-    } else if (result.type === 'error') {
-      setFetchStates((s) => ({ ...s, [task.id]: 'error' }));
     } else {
-      setFetchStates((s) => ({ ...s, [task.id]: 'none' }));
+      // none / too_many / error → Google Maps の検索URLにフォールバック
+      // ユーザーの入力をそのまま検索クエリに使うので、Google Maps の検索精度に任せられる
+      update(task.id, { maps_url: googleMapsSearchUrl(name) });
+      setFetchStates((s) => ({ ...s, [task.id]: 'found' }));
     }
   };
 
@@ -219,9 +220,9 @@ function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: Su
                 className="flex-shrink-0 mt-1 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 text-xs flex items-center justify-center transition-colors"
               >✕</button>
             </div>
-            {/* マップURL欄 + 結果メッセージ + 手動でGoogleマップを開くリンク */}
-            <div className="pl-[100px] space-y-1">
-              {task.maps_url && (
+            {/* マップURL欄 + Googleマップで開くリンク（URL欄表示時のみ表示） */}
+            {task.maps_url && (
+              <div className="pl-[100px] space-y-1">
                 <div className="flex items-center gap-1.5">
                   <input
                     type="text"
@@ -237,20 +238,18 @@ function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: Su
                     title="URLをクリア"
                   >×</button>
                 </div>
-              )}
-              {state === 'none' && <p className="text-[11px] text-slate-400">場所を特定できませんでした</p>}
-              {state === 'error' && <p className="text-[11px] text-slate-400">取得エラー</p>}
-              {task.content.trim() && (
-                <a
-                  href={googleMapsSearchUrl(task.content)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-sky hover:underline"
-                >
-                  🔍 Googleマップで開く
-                </a>
-              )}
-            </div>
+                {task.content.trim() && (
+                  <a
+                    href={googleMapsSearchUrl(task.content)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-sky hover:underline"
+                  >
+                    🔍 Googleマップで開く
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         );
       })}
