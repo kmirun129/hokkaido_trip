@@ -7,13 +7,13 @@ import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
 import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { color: string; gradient: string }> = {
-  観光:    { color: 'text-sky',       gradient: 'linear-gradient(135deg, #e8f3fb 0%, #f7fbfe 100%)' },
-  グルメ:  { color: 'text-accent',    gradient: 'linear-gradient(135deg, #fde9dd 0%, #fff7f2 100%)' },
-  宿泊:    { color: 'text-lavender',  gradient: 'linear-gradient(135deg, #ede4f7 0%, #f9f4fc 100%)' },
-  レジャー:{ color: 'text-nature',    gradient: 'linear-gradient(135deg, #deeede 0%, #f1faf1 100%)' },
-  移動:    { color: 'text-slate-500', gradient: 'linear-gradient(135deg, #e8eef4 0%, #f6f9fb 100%)' },
-  その他:  { color: 'text-slate-400', gradient: 'linear-gradient(135deg, #eef2f6 0%, #f9fafb 100%)' },
+const TYPE_CONFIG: Record<PlaceType, { color: string; gradient: string; dot: string }> = {
+  観光:    { color: 'text-sky',       gradient: 'linear-gradient(135deg, #e8f3fb 0%, #f7fbfe 100%)', dot: '#5BA3D9' },
+  グルメ:  { color: 'text-accent',    gradient: 'linear-gradient(135deg, #fde9dd 0%, #fff7f2 100%)', dot: '#FF6B35' },
+  宿泊:    { color: 'text-lavender',  gradient: 'linear-gradient(135deg, #ede4f7 0%, #f9f4fc 100%)', dot: '#9B7EC8' },
+  レジャー:{ color: 'text-nature',    gradient: 'linear-gradient(135deg, #deeede 0%, #f1faf1 100%)', dot: '#5BA85F' },
+  移動:    { color: 'text-slate-500', gradient: 'linear-gradient(135deg, #e8eef4 0%, #f6f9fb 100%)', dot: '#94a3b8' },
+  その他:  { color: 'text-slate-400', gradient: 'linear-gradient(135deg, #eef2f6 0%, #f9fafb 100%)', dot: '#cbd5e1' },
 };
 
 type Props = {
@@ -144,18 +144,36 @@ export default function PlaceCard({
 
           {subTasks.length > 0 && (
             <div className="space-y-1.5 pt-0.5">
-              {subTasks.map((task: SubTask) => (
-                <div key={task.id} className="flex items-baseline gap-2.5 text-[13px]">
-                  {task.showTime && task.time ? (
-                    <span className={`tabular-nums font-semibold flex-shrink-0 w-12 ${cfg.color}`}>
-                      {task.time}
-                    </span>
-                  ) : (
-                    <span className="flex-shrink-0 w-12" />
-                  )}
-                  <span className="text-slate-700 leading-snug">{task.content}</span>
-                </div>
-              ))}
+              {subTasks.map((task: SubTask) => {
+                const hasTime = task.showTime && !!task.time;
+                return (
+                  <div key={task.id} className="flex items-center gap-2.5 text-[13px]">
+                    {hasTime ? (
+                      <span className={`tabular-nums font-semibold flex-shrink-0 w-12 ${cfg.color}`}>
+                        {task.time}
+                      </span>
+                    ) : (
+                      <span
+                        className="flex-shrink-0 w-1.5 h-1.5 rounded-full opacity-70"
+                        style={{ background: cfg.dot }}
+                      />
+                    )}
+                    <span className="text-slate-700 leading-snug flex-1 min-w-0">{task.content}</span>
+                    {task.maps_url && (
+                      <a
+                        href={task.maps_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className={`flex-shrink-0 inline-flex items-center ${cfg.color} hover:opacity-70 transition-opacity`}
+                        title="Googleマップで開く"
+                      >
+                        <MapPin size={13} />
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

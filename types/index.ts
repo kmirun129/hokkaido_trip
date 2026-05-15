@@ -6,6 +6,7 @@ export type SubTask = {
   time: string;
   showTime: boolean;
   content: string;
+  maps_url?: string | null;
 };
 
 export type TripItem = {

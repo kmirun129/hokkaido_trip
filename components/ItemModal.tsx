@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { TripItem, PlaceType, TransportMode, NewTripItem, SubTask } from "@/types";
 import { TIME_OPTIONS, DURATION_OPTIONS, BusinessHours, HoursBlock, parseHours } from "@/lib/hours";
+import { fetchMapsCandidate } from "@/lib/maps";
 
 const PLACE_TYPES: PlaceType[] = ['観光', 'グルメ', '宿泊', 'レジャー', '移動', 'その他'];
 const TRANSPORT_MODES: TransportMode[] = ['徒歩', '車', '電車', 'バス', '飛行機', 'タクシー', 'フェリー'];
@@ -128,55 +129,123 @@ function HoursBlockPicker({ value, onChange }: { value: string | null; onChange:
 }
 
 // ── サブタスクエディタ ────────────────────────────────────────
+type FetchState = 'idle' | 'loading' | 'found' | 'none' | 'error';
+
 function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: SubTask[]) => void }) {
+  const [fetchStates, setFetchStates] = useState<Record<string, FetchState>>({});
+
   const add = () => {
-    onChange([...value, { id: crypto.randomUUID(), time: '', showTime: false, content: '' }]);
+    onChange([...value, { id: crypto.randomUUID(), time: '', showTime: false, content: '', maps_url: null }]);
   };
-  const remove = (id: string) => onChange(value.filter((t) => t.id !== id));
+  const remove = (id: string) => {
+    onChange(value.filter((t) => t.id !== id));
+    setFetchStates((s) => { const n = { ...s }; delete n[id]; return n; });
+  };
   const update = (id: string, patch: Partial<SubTask>) =>
     onChange(value.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+
+  const handleFetch = async (task: SubTask) => {
+    const name = task.content.trim();
+    if (!name) return;
+    setFetchStates((s) => ({ ...s, [task.id]: 'loading' }));
+    const result = await fetchMapsCandidate(name);
+    if (result.type === 'found') {
+      update(task.id, { maps_url: result.url });
+      setFetchStates((s) => ({ ...s, [task.id]: 'found' }));
+    } else if (result.type === 'multiple') {
+      // 複数候補があれば最上位を採用（個別UIは持たずシンプルに）
+      update(task.id, { maps_url: result.candidates[0].url });
+      setFetchStates((s) => ({ ...s, [task.id]: 'found' }));
+    } else if (result.type === 'error') {
+      setFetchStates((s) => ({ ...s, [task.id]: 'error' }));
+    } else {
+      setFetchStates((s) => ({ ...s, [task.id]: 'none' }));
+    }
+  };
 
   return (
     <div className="space-y-2">
       <label className="block text-xs font-semibold text-slate-500">立ち寄り・やることリスト</label>
-      {value.map((task) => (
-        <div key={task.id} className="flex items-start gap-2">
-          {/* 時刻表示トグル + 時刻入力 */}
-          <div className="flex items-center gap-1 flex-shrink-0 pt-2">
-            <button
-              type="button"
-              onClick={() => update(task.id, { showTime: !task.showTime })}
-              className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] transition-colors ${
-                task.showTime ? 'bg-sky text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-              }`}
-              title="時刻を表示/非表示"
-            >
-              🕐
-            </button>
-            {task.showTime && (
+      {value.map((task) => {
+        const state = fetchStates[task.id] ?? 'idle';
+        return (
+          <div key={task.id} className="space-y-1.5">
+            <div className="flex items-start gap-2">
+              {/* 時刻表示トグル + 時刻入力 */}
+              <div className="flex items-center gap-1 flex-shrink-0 pt-2">
+                <button
+                  type="button"
+                  onClick={() => update(task.id, { showTime: !task.showTime })}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold transition-colors ${
+                    task.showTime ? 'bg-sky text-white' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                  }`}
+                  title="時刻を表示/非表示"
+                >
+                  時
+                </button>
+                {task.showTime && (
+                  <input
+                    type="time"
+                    value={task.time}
+                    onChange={(e) => update(task.id, { time: e.target.value })}
+                    className="w-[84px] px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+                  />
+                )}
+              </div>
+              {/* 内容 */}
               <input
-                type="time"
-                value={task.time}
-                onChange={(e) => update(task.id, { time: e.target.value })}
-                className="w-[84px] px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
+                type="text"
+                value={task.content}
+                onChange={(e) => { update(task.id, { content: e.target.value }); setFetchStates((s) => ({ ...s, [task.id]: 'idle' })); }}
+                placeholder="例: ロイズチョコレートワールド"
+                className="flex-1 min-w-0 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
               />
+              {/* 自動取得ボタン */}
+              <button
+                type="button"
+                onClick={() => handleFetch(task)}
+                disabled={!task.content.trim() || state === 'loading'}
+                title="Googleマップを自動取得"
+                className={`flex-shrink-0 mt-1 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                  task.maps_url ? 'bg-nature/10 text-nature hover:bg-nature/20' : 'bg-sky-light text-sky hover:bg-sky hover:text-white'
+                }`}
+              >
+                {state === 'loading' ? <span className="animate-spin inline-block">⟳</span> : '📍'}
+              </button>
+              {/* 削除 */}
+              <button
+                type="button"
+                onClick={() => remove(task.id)}
+                className="flex-shrink-0 mt-1 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 text-xs flex items-center justify-center transition-colors"
+              >✕</button>
+            </div>
+            {/* マップURL欄 + 結果メッセージ */}
+            {(task.maps_url || state === 'none' || state === 'error') && (
+              <div className="pl-[100px]">
+                {task.maps_url && (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={task.maps_url}
+                      onChange={(e) => update(task.id, { maps_url: e.target.value || null })}
+                      placeholder="https://maps.google.com/..."
+                      className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-slate-200 text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/40"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => update(task.id, { maps_url: null })}
+                      className="flex-shrink-0 text-slate-400 hover:text-red-500 text-xs"
+                      title="URLをクリア"
+                    >×</button>
+                  </div>
+                )}
+                {state === 'none' && <p className="text-[11px] text-slate-400">場所を特定できませんでした</p>}
+                {state === 'error' && <p className="text-[11px] text-slate-400">取得エラー</p>}
+              </div>
             )}
           </div>
-          {/* 内容 */}
-          <input
-            type="text"
-            value={task.content}
-            onChange={(e) => update(task.id, { content: e.target.value })}
-            placeholder="例: ロイズチョコレートワールド"
-            className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky/40"
-          />
-          <button
-            type="button"
-            onClick={() => remove(task.id)}
-            className="flex-shrink-0 mt-2 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 text-xs flex items-center justify-center transition-colors"
-          >✕</button>
-        </div>
-      ))}
+        );
+      })}
       <button
         type="button"
         onClick={add}
@@ -243,151 +312,16 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
     const name = form.name?.trim();
     if (!name) return;
     setFetching(true); setFetchResult(null);
-    try {
-      // 北海道バウンディングボックス: 西端,北端,東端,南端
-      const HOKKAIDO_VIEWBOX = '139.3,45.6,145.9,41.3';
-      const params = new URLSearchParams({
-        q: `${name} 北海道`,
-        format: 'json',
-        limit: '5',
-        'accept-language': 'ja',
-        countrycodes: 'jp',
-        viewbox: HOKKAIDO_VIEWBOX,
-        bounded: '1',
-      });
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?${params}`,
-        { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
-      );
-      type NominatimResult = { lat: string; lon: string; display_name: string; importance: number; name: string; class: string; type: string };
-      let data: NominatimResult[] = await res.json();
-
-      // bounded=1 で結果なし → 北海道縛りを外して再試行
-      if (data.length === 0) {
-        const params2 = new URLSearchParams({
-          q: name,
-          format: 'json',
-          limit: '5',
-          'accept-language': 'ja',
-          countrycodes: 'jp',
-        });
-        const res2 = await fetch(
-          `https://nominatim.openstreetmap.org/search?${params2}`,
-          { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
-        );
-        data = await res2.json();
-      }
-
-      if (data.length === 0) {
-        setFetchResult({ type: 'none' });
-        return;
-      }
-
-      // 名称なし（座標のみ）の結果は除外
-      const named = data.filter((p) => p.name?.trim());
-      if (named.length === 0) {
-        setFetchResult({ type: 'none' });
-        return;
-      }
-
-      // OSM カテゴリの「主要エンティティらしさ」ボーナス（同名の駅プラットフォーム等を下位に）
-      const categoryBonus = (cls: string, t: string): number => {
-        const high = new Set([
-          'aeroway/aerodrome', 'aeroway/terminal',
-          'tourism/zoo', 'tourism/museum', 'tourism/attraction', 'tourism/theme_park',
-          'tourism/hotel', 'tourism/hostel', 'tourism/guest_house', 'tourism/viewpoint',
-          'amenity/restaurant', 'amenity/cafe', 'amenity/fast_food', 'amenity/bar', 'amenity/pub',
-          'shop/car_rental', 'shop/department_store', 'shop/mall', 'shop/supermarket',
-          'leisure/park', 'leisure/garden',
-        ]);
-        const low = new Set([
-          'railway/stop', 'railway/halt', 'highway/bus_stop',
-          'building/train_station', 'building/yes',
-          'public_transport/platform', 'public_transport/stop_position',
-        ]);
-        if (high.has(`${cls}/${t}`)) return 0.1;
-        if (low.has(`${cls}/${t}`)) return -0.15;
-        return 0;
-      };
-
-      // importance + カテゴリボーナスで降順ソート
-      named.sort((a, b) =>
-        (b.importance + categoryBonus(b.class, b.type)) -
-        (a.importance + categoryBonus(a.class, a.type))
-      );
-
-      // Google Maps の Place カード（星評価・口コミ）を開かせるには「検索」させる必要がある。
-      // 名前だけだと複数候補になるため、施設名＋市町村＋都道府県の最小限で絞り込み、
-      // さらに座標で地図ビューポートを固定して一意に特定させる。
-      // display_name の不要な行政区分（振興局・地方・郵便番号・国名）は除外する。
-      const mapsUrl = (p: NominatimResult) => {
-        const parts = p.display_name
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s) =>
-            s &&
-            s !== '日本' &&
-            !s.endsWith('振興局') &&
-            !s.endsWith('地方') &&
-            !/^\d{3}-?\d{4}$/.test(s)
-          );
-        const query = parts.join(' ');
-        return `https://www.google.com/maps/search/${encodeURIComponent(query)}/@${p.lat},${p.lon},17z`;
-      };
-
-      // 1位が2位の2倍以上のスコア → 1位を確定
-      const topImportance = named[0].importance;
-      const secondImportance = named[1]?.importance ?? 0;
-      const isTopDominant = named.length === 1 || topImportance >= secondImportance * 2;
-
-      // OSM の class/type を日本語カテゴリに変換（同名候補を区別するため）
-      const classLabel = (cls: string, t: string): string | null => {
-        const map: Record<string, string> = {
-          'aeroway/aerodrome': '空港', 'aeroway/terminal': '空港ターミナル',
-          'railway/station': '駅', 'railway/halt': '駅', 'railway/stop': '駅停車場', 'railway/tram_stop': '路面電車駅',
-          'highway/bus_stop': 'バス停',
-          'amenity/restaurant': '飲食店', 'amenity/cafe': 'カフェ', 'amenity/fast_food': 'ファストフード',
-          'amenity/bar': 'バー', 'amenity/pub': '居酒屋', 'amenity/parking': '駐車場',
-          'amenity/hospital': '病院', 'amenity/bank': '銀行', 'amenity/post_office': '郵便局',
-          'tourism/hotel': 'ホテル', 'tourism/hostel': 'ホステル', 'tourism/guest_house': 'ゲストハウス',
-          'tourism/attraction': '観光地', 'tourism/museum': '博物館', 'tourism/zoo': '動物園',
-          'tourism/viewpoint': '展望台', 'tourism/theme_park': 'テーマパーク',
-          'leisure/park': '公園', 'leisure/garden': '庭園', 'leisure/nature_reserve': '自然保護区',
-          'natural/peak': '山', 'natural/water': '水域', 'natural/beach': 'ビーチ',
-          'shop/convenience': 'コンビニ', 'shop/supermarket': 'スーパー', 'shop/car_rental': 'レンタカー',
-          'shop/department_store': 'デパート', 'shop/mall': 'モール',
-          'building/train_station': '駅舎',
-        };
-        return map[`${cls}/${t}`] ?? null;
-      };
-
-      // 候補ラベル：display_name 先頭の完全名 + カテゴリ + 市町村
-      // 同名OSMエントリ（空港本体／駅／駅プラットフォーム など）が区別できるようにする
-      const candidateLabel = (p: NominatimResult) => {
-        const parts = p.display_name.split(',').map((s) => s.trim());
-        const fullName = parts[0] || p.name;
-        const city = parts.find((s) => /[市町村区]$/.test(s));
-        const cat = classLabel(p.class, p.type);
-        const ctx = [cat, city && !fullName.includes(city) ? city : null].filter(Boolean).join('・');
-        return ctx ? `${fullName}（${ctx}）` : fullName;
-      };
-
-      if (isTopDominant) {
-        set('maps_url', mapsUrl(named[0]));
-        setFetchResult({ type: 'found', label: named[0].display_name.split(',')[0].trim() || named[0].name });
-      } else if (named.length >= 5) {
-        setFetchResult({ type: 'too_many' });
-      } else {
-        setFetchResult({
-          type: 'multiple',
-          candidates: named.map((p) => ({
-            label: candidateLabel(p),
-            url: mapsUrl(p),
-          })),
-        });
-      }
-    } catch { setFetchResult({ type: 'error' }); }
-    finally { setFetching(false); }
+    const result = await fetchMapsCandidate(name);
+    if (result.type === 'found') {
+      set('maps_url', result.url);
+      setFetchResult({ type: 'found', label: result.label });
+    } else if (result.type === 'multiple') {
+      setFetchResult({ type: 'multiple', candidates: result.candidates });
+    } else {
+      setFetchResult({ type: result.type });
+    }
+    setFetching(false);
   };
 
   const handleSave = async () => {
