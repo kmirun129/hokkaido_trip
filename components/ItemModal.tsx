@@ -458,16 +458,9 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
               <Field label="時刻" type="time" value={form.time ?? ''} onChange={(v) => set('time', v)} />
               <DurationSelect value={form.duration ?? ''} onChange={(v) => set('duration', v)} />
 
-              <Field label="説明文" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="場所の説明や見どころ" multiline />
-
-              <HoursBlockPicker
-                value={form.business_hours ?? null}
-                onChange={(v) => setForm((f) => ({ ...f, business_hours: v }))}
-              />
-
-              <Field label="メモ" value={form.memo ?? ''} onChange={(v) => set('memo', v)} placeholder="個人的なメモ" multiline />
-
               <SubTaskEditor value={subTasks} onChange={setSubTasks} />
+
+              <Field label="説明文" value={form.description ?? ''} onChange={(v) => set('description', v)} placeholder="場所の説明や見どころ" multiline />
 
               {/* GoogleマップURL */}
               <div>
@@ -520,6 +513,11 @@ export default function ItemModal({ mode, onSave, onClose }: Props) {
                   </div>
                 )}
               </div>
+
+              <HoursBlockPicker
+                value={form.business_hours ?? null}
+                onChange={(v) => setForm((f) => ({ ...f, business_hours: v }))}
+              />
             </>
           )}
         </div>
