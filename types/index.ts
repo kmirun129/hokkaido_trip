@@ -1,4 +1,4 @@
-export type PlaceType = '観光' | '食事' | '宿泊' | '体験' | 'その他';
+export type PlaceType = '観光' | 'グルメ' | '宿泊' | 'レジャー' | '移動' | 'その他';
 export type TransportMode = '徒歩' | '車' | '電車' | 'バス' | '飛行機' | 'タクシー' | 'フェリー';
 
 export type SubTask = {

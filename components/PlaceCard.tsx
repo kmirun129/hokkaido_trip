@@ -7,12 +7,13 @@ import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
 import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; gradient: string }> = {
-  観光:   { color: 'text-sky',       bg: 'bg-sky-light',      gradient: 'linear-gradient(135deg, #5BA3D9 0%, #1E5F99 100%)' },
-  食事:   { color: 'text-accent',    bg: 'bg-accent-light',   gradient: 'linear-gradient(135deg, #FF6B35 0%, #C03A0E 100%)' },
-  宿泊:   { color: 'text-lavender',  bg: 'bg-lavender-light', gradient: 'linear-gradient(135deg, #9B7EC8 0%, #5E3A9E 100%)' },
-  体験:   { color: 'text-nature',    bg: 'bg-nature-light',   gradient: 'linear-gradient(135deg, #5BA85F 0%, #2B6E2F 100%)' },
-  その他: { color: 'text-slate-500', bg: 'bg-slate-100',      gradient: 'linear-gradient(135deg, #64748B 0%, #334155 100%)' },
+const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; emoji: string }> = {
+  観光:   { color: 'text-sky',       bg: 'bg-sky-light',      emoji: '🗺️' },
+  グルメ: { color: 'text-accent',    bg: 'bg-accent-light',   emoji: '🍽️' },
+  宿泊:   { color: 'text-lavender',  bg: 'bg-lavender-light', emoji: '🏨' },
+  レジャー:{ color: 'text-nature',   bg: 'bg-nature-light',   emoji: '🎿' },
+  移動:   { color: 'text-slate-500', bg: 'bg-slate-100',      emoji: '🚗' },
+  その他: { color: 'text-slate-400', bg: 'bg-slate-50',       emoji: '📌' },
 };
 
 type Props = {
@@ -60,6 +61,7 @@ export default function PlaceCard({
                 </span>
               )}
               <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
+              <span className="text-[12px] leading-none select-none">{cfg.emoji}</span>
               <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
             </div>
             {item.duration && (

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { TripItem, PlaceType, TransportMode, NewTripItem, SubTask } from "@/types";
 import { TIME_OPTIONS, DURATION_OPTIONS, BusinessHours, HoursBlock, parseHours } from "@/lib/hours";
 
-const PLACE_TYPES: PlaceType[] = ['観光', '食事', '宿泊', '体験', 'その他'];
+const PLACE_TYPES: PlaceType[] = ['観光', 'グルメ', '宿泊', 'レジャー', '移動', 'その他'];
 const TRANSPORT_MODES: TransportMode[] = ['徒歩', '車', '電車', 'バス', '飛行機', 'タクシー', 'フェリー'];
 const TRANSPORT_DURATION_CHIPS = ['約5分', '約10分', '約15分', '約20分', '約30分', '約1時間', '約1時間30分', '約2時間'];
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日'] as const;
