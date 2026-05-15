@@ -83,39 +83,74 @@ function candidateLabel(p: NominatimResult): string {
   return ctx ? `${fullName}（${ctx}）` : fullName;
 }
 
+// 手動検索用：Google Maps の検索ページを直接開く URL を返す。
+export function googleMapsSearchUrl(name: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name.trim())}`;
+}
+
+async function callNominatim(query: string, hokkaidoBounded: boolean): Promise<NominatimResult[]> {
+  const params = new URLSearchParams({
+    q: query,
+    format: 'json',
+    limit: '5',
+    'accept-language': 'ja',
+    countrycodes: 'jp',
+    ...(hokkaidoBounded ? { viewbox: HOKKAIDO_VIEWBOX, bounded: '1' } : {}),
+  });
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?${params}`,
+    { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
+  );
+  return (await res.json()) as NominatimResult[];
+}
+
+// 店舗の支店サフィックスや括弧内補足を取り除いたバリエーションを生成。
+// 例: "千秋庵 新千歳空港店" → ["千秋庵 新千歳空港店", "千秋庵", ...]
+function nameVariations(name: string): string[] {
+  const trimmed = name.trim();
+  const variations = new Set<string>([trimmed]);
+
+  // 括弧内（半角・全角）を削除
+  const noParens = trimmed.replace(/[（(][^）)]*[）)]/g, '').trim();
+  if (noParens) variations.add(noParens);
+
+  // 末尾の支店名サフィックスを削除
+  const suffixPatterns = [
+    /\s*[・・\s][^\s・・]*(本店|支店|店)\s*$/, // 「・〇〇店」「 〇〇店」
+    /(本店|支店)\s*$/,
+  ];
+  for (const base of [trimmed, noParens]) {
+    if (!base) continue;
+    for (const re of suffixPatterns) {
+      const stripped = base.replace(re, '').trim();
+      if (stripped && stripped !== base) variations.add(stripped);
+    }
+  }
+
+  return Array.from(variations);
+}
+
 export async function fetchMapsCandidate(name: string): Promise<MapsFetchResult> {
   const trimmed = name.trim();
   if (!trimmed) return { type: 'none' };
 
   try {
-    const params = new URLSearchParams({
-      q: `${trimmed} 北海道`,
-      format: 'json',
-      limit: '5',
-      'accept-language': 'ja',
-      countrycodes: 'jp',
-      viewbox: HOKKAIDO_VIEWBOX,
-      bounded: '1',
-    });
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?${params}`,
-      { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
-    );
-    let data: NominatimResult[] = await res.json();
+    let data: NominatimResult[] = [];
 
+    // ① 北海道バウンディングボックス内で原文検索
+    data = await callNominatim(`${trimmed} 北海道`, true);
+
+    // ② 縛りなしで原文検索
+    if (data.length === 0) data = await callNominatim(trimmed, false);
+
+    // ③ 支店サフィックス等を除いたバリエーションで再検索
     if (data.length === 0) {
-      const params2 = new URLSearchParams({
-        q: trimmed,
-        format: 'json',
-        limit: '5',
-        'accept-language': 'ja',
-        countrycodes: 'jp',
-      });
-      const res2 = await fetch(
-        `https://nominatim.openstreetmap.org/search?${params2}`,
-        { headers: { 'User-Agent': 'HokkaidoTripApp/1.0' } }
-      );
-      data = await res2.json();
+      const variations = nameVariations(trimmed).filter((v) => v !== trimmed);
+      for (const variant of variations) {
+        data = await callNominatim(`${variant} 北海道`, true);
+        if (data.length === 0) data = await callNominatim(variant, false);
+        if (data.length > 0) break;
+      }
     }
 
     if (data.length === 0) return { type: 'none' };

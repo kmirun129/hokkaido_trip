@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TripItem, PlaceType, TransportMode, NewTripItem, SubTask } from "@/types";
 import { TIME_OPTIONS, DURATION_OPTIONS, BusinessHours, HoursBlock, parseHours } from "@/lib/hours";
-import { fetchMapsCandidate } from "@/lib/maps";
+import { fetchMapsCandidate, googleMapsSearchUrl } from "@/lib/maps";
 
 const PLACE_TYPES: PlaceType[] = ['観光', 'グルメ', '宿泊', 'レジャー', '移動', 'その他'];
 const TRANSPORT_MODES: TransportMode[] = ['徒歩', '車', '電車', 'バス', '飛行機', 'タクシー', 'フェリー'];
@@ -219,30 +219,38 @@ function SubTaskEditor({ value, onChange }: { value: SubTask[]; onChange: (v: Su
                 className="flex-shrink-0 mt-1 w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 text-xs flex items-center justify-center transition-colors"
               >✕</button>
             </div>
-            {/* マップURL欄 + 結果メッセージ */}
-            {(task.maps_url || state === 'none' || state === 'error') && (
-              <div className="pl-[100px]">
-                {task.maps_url && (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={task.maps_url}
-                      onChange={(e) => update(task.id, { maps_url: e.target.value || null })}
-                      placeholder="https://maps.google.com/..."
-                      className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-slate-200 text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/40"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => update(task.id, { maps_url: null })}
-                      className="flex-shrink-0 text-slate-400 hover:text-red-500 text-xs"
-                      title="URLをクリア"
-                    >×</button>
-                  </div>
-                )}
-                {state === 'none' && <p className="text-[11px] text-slate-400">場所を特定できませんでした</p>}
-                {state === 'error' && <p className="text-[11px] text-slate-400">取得エラー</p>}
-              </div>
-            )}
+            {/* マップURL欄 + 結果メッセージ + 手動でGoogleマップを開くリンク */}
+            <div className="pl-[100px] space-y-1">
+              {task.maps_url && (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={task.maps_url}
+                    onChange={(e) => update(task.id, { maps_url: e.target.value || null })}
+                    placeholder="https://maps.google.com/..."
+                    className="flex-1 min-w-0 px-2 py-1 rounded-lg border border-slate-200 text-[11px] text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => update(task.id, { maps_url: null })}
+                    className="flex-shrink-0 text-slate-400 hover:text-red-500 text-xs"
+                    title="URLをクリア"
+                  >×</button>
+                </div>
+              )}
+              {state === 'none' && <p className="text-[11px] text-slate-400">場所を特定できませんでした</p>}
+              {state === 'error' && <p className="text-[11px] text-slate-400">取得エラー</p>}
+              {task.content.trim() && (
+                <a
+                  href={googleMapsSearchUrl(task.content)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] text-sky hover:underline"
+                >
+                  🔍 Googleマップで開く
+                </a>
+              )}
+            </div>
           </div>
         );
       })}
