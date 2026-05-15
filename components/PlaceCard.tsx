@@ -48,63 +48,44 @@ export default function PlaceCard({
       id={`place-${item.id}`}
       className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden scroll-mt-20"
     >
-      {/* ── ヘッダー: 時刻 + カテゴリ → 場所名 ── */}
+      {/* ── ヘッダー: [チップ + Map] 1行目 → [タイトル全幅] 2行目 ── */}
       <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start gap-3">
-          <div className="flex-1 min-w-0">
-            {/* Row 1: 時刻＋カテゴリを一体コンテナで包む */}
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${cfg.bg}`}>
-                {item.time && (
-                  <span className={`text-[14px] font-bold tabular-nums leading-none ${cfg.color}`}>
-                    {item.time}
-                  </span>
-                )}
-                <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
-                <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
-              </div>
-              {item.duration && (
-                <span className="text-[11px] text-slate-400">{item.duration}</span>
+        {/* Row 1: チップ（時刻+カテゴリ） + 右端ボタン */}
+        <div className="flex items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0 ${cfg.bg}`}>
+              {item.time && (
+                <span className={`text-[14px] font-bold tabular-nums leading-none ${cfg.color}`}>
+                  {item.time}
+                </span>
               )}
+              <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
+              <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
             </div>
-            {/* Row 2: 場所名（グラデーション・主役） */}
-            <h3
-              className="text-2xl font-extrabold tracking-tight leading-tight break-words"
-              style={{
-                fontFamily: 'var(--font-mincho)',
-                background: cfg.gradient,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              {item.name ?? '（名称未設定）'}
-            </h3>
+            {item.duration && (
+              <span className="text-[11px] text-slate-400 flex-shrink-0">{item.duration}</span>
+            )}
           </div>
 
-          {/* 右端: Mapリンク or 編集ボタン群（ゴーストスタイル） */}
+          {/* 右端: Mapリンク or 編集ボタン群 */}
           {isEdit ? (
-            <div className="flex flex-col gap-0.5 flex-shrink-0">
-              <div className="flex gap-0.5">
-                <button onClick={onMoveUp} disabled={isFirst}
-                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
-                  <ChevronUp size={15} />
-                </button>
-                <button onClick={onMoveDown} disabled={isLast}
-                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
-                  <ChevronDown size={15} />
-                </button>
-              </div>
-              <div className="flex gap-0.5">
-                <button onClick={onEdit}
-                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors">
-                  <Pencil size={13} />
-                </button>
-                <button onClick={onDelete}
-                  className="w-7 h-7 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors">
-                  <Trash2 size={13} />
-                </button>
-              </div>
+            <div className="flex items-center gap-0.5 flex-shrink-0">
+              <button onClick={onMoveUp} disabled={isFirst}
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
+                <ChevronUp size={15} />
+              </button>
+              <button onClick={onMoveDown} disabled={isLast}
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
+                <ChevronDown size={15} />
+              </button>
+              <button onClick={onEdit}
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors ml-0.5">
+                <Pencil size={13} />
+              </button>
+              <button onClick={onDelete}
+                className="w-7 h-7 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors">
+                <Trash2 size={13} />
+              </button>
             </div>
           ) : hasMap ? (
             <a
@@ -118,6 +99,11 @@ export default function PlaceCard({
             </a>
           ) : null}
         </div>
+
+        {/* Row 2: 場所名（全幅・明朝体） */}
+        <h3 className="font-mincho text-[22px] font-extrabold tracking-tight leading-tight break-words text-[#222222]">
+          {item.name ?? '（名称未設定）'}
+        </h3>
       </div>
 
       {/* ── 写真 ── */}
