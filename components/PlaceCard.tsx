@@ -58,7 +58,7 @@ export default function PlaceCard({
               className="inline-flex items-center gap-[7px] px-2.5 py-[5px] rounded-lg flex-shrink-0"
               style={{
                 background: cfg.gradient,
-                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+                boxShadow: '1px 1px 2px rgba(15, 23, 42, 0.06), 2px 2px 4px rgba(15, 23, 42, 0.04)',
               }}
             >
               {item.time && (
