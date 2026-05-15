@@ -56,7 +56,10 @@ export default function PlaceCard({
           <div className="flex items-center gap-2 min-w-0">
             <div
               className="inline-flex items-center gap-[7px] px-2.5 py-[5px] rounded-lg flex-shrink-0"
-              style={{ background: cfg.gradient }}
+              style={{
+                background: cfg.gradient,
+                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06), 0 0 0 1px rgba(15, 23, 42, 0.04)',
+              }}
             >
               {item.time && (
                 <span className={`text-[13px] font-bold tabular-nums leading-none ${cfg.color}`}>
