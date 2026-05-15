@@ -7,12 +7,12 @@ import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
 import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
-const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string }> = {
-  観光:   { color: 'text-sky',      bg: 'bg-sky-light' },
-  食事:   { color: 'text-accent',   bg: 'bg-accent-light' },
-  宿泊:   { color: 'text-lavender', bg: 'bg-lavender-light' },
-  体験:   { color: 'text-nature',   bg: 'bg-nature-light' },
-  その他: { color: 'text-slate-500',bg: 'bg-slate-100' },
+const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; gradient: string }> = {
+  観光:   { color: 'text-sky',       bg: 'bg-sky-light',      gradient: 'linear-gradient(135deg, #5BA3D9 0%, #1E5F99 100%)' },
+  食事:   { color: 'text-accent',    bg: 'bg-accent-light',   gradient: 'linear-gradient(135deg, #FF6B35 0%, #C03A0E 100%)' },
+  宿泊:   { color: 'text-lavender',  bg: 'bg-lavender-light', gradient: 'linear-gradient(135deg, #9B7EC8 0%, #5E3A9E 100%)' },
+  体験:   { color: 'text-nature',    bg: 'bg-nature-light',   gradient: 'linear-gradient(135deg, #5BA85F 0%, #2B6E2F 100%)' },
+  その他: { color: 'text-slate-500', bg: 'bg-slate-100',      gradient: 'linear-gradient(135deg, #64748B 0%, #334155 100%)' },
 };
 
 type Props = {
@@ -67,8 +67,16 @@ export default function PlaceCard({
                 <span className="text-[11px] text-slate-400">{item.duration}</span>
               )}
             </div>
-            {/* Row 2: 場所名（主役） */}
-            <h3 className="text-[1.2rem] font-bold tracking-tight text-slate-900 leading-snug break-words">
+            {/* Row 2: 場所名（グラデーション・主役） */}
+            <h3
+              className="text-2xl font-extrabold tracking-tight leading-tight break-words"
+              style={{
+                background: cfg.gradient,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
               {item.name ?? '（名称未設定）'}
             </h3>
           </div>
