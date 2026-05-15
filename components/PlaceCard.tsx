@@ -8,12 +8,12 @@ import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-re
 import PhotoGallery from "./PhotoGallery";
 
 const TYPE_CONFIG: Record<PlaceType, { color: string; gradient: string }> = {
-  観光:    { color: 'text-sky',       gradient: 'linear-gradient(135deg, #bddff5 0%, #e8f4fc 100%)' },
-  グルメ:  { color: 'text-accent',    gradient: 'linear-gradient(135deg, #ffcdb5 0%, #ffeee6 100%)' },
-  宿泊:    { color: 'text-lavender',  gradient: 'linear-gradient(135deg, #d3c2ee 0%, #f0eaf9 100%)' },
-  レジャー:{ color: 'text-nature',    gradient: 'linear-gradient(135deg, #b2d9b4 0%, #e4f4e5 100%)' },
-  移動:    { color: 'text-slate-500', gradient: 'linear-gradient(135deg, #c8d4df 0%, #edf1f5 100%)' },
-  その他:  { color: 'text-slate-400', gradient: 'linear-gradient(135deg, #dde3ea 0%, #f4f6f8 100%)' },
+  観光:    { color: 'text-sky',       gradient: 'linear-gradient(135deg, #e8f3fb 0%, #f7fbfe 100%)' },
+  グルメ:  { color: 'text-accent',    gradient: 'linear-gradient(135deg, #fde9dd 0%, #fff7f2 100%)' },
+  宿泊:    { color: 'text-lavender',  gradient: 'linear-gradient(135deg, #ede4f7 0%, #f9f4fc 100%)' },
+  レジャー:{ color: 'text-nature',    gradient: 'linear-gradient(135deg, #deeede 0%, #f1faf1 100%)' },
+  移動:    { color: 'text-slate-500', gradient: 'linear-gradient(135deg, #e8eef4 0%, #f6f9fb 100%)' },
+  その他:  { color: 'text-slate-400', gradient: 'linear-gradient(135deg, #eef2f6 0%, #f9fafb 100%)' },
 };
 
 type Props = {
