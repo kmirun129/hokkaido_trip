@@ -4,14 +4,14 @@ import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
-import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock, Compass, UtensilsCrossed, BedDouble, Mountain, Car, Tag, LucideIcon } from "lucide-react";
+import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock, Camera, UtensilsCrossed, BedDouble, Snowflake, Car, Tag, LucideIcon } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
 const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string; Icon: LucideIcon }> = {
-  観光:    { color: 'text-sky',       bg: 'bg-sky-light',      Icon: Compass },
+  観光:    { color: 'text-sky',       bg: 'bg-sky-light',      Icon: Camera },
   グルメ:  { color: 'text-accent',    bg: 'bg-accent-light',   Icon: UtensilsCrossed },
   宿泊:    { color: 'text-lavender',  bg: 'bg-lavender-light', Icon: BedDouble },
-  レジャー:{ color: 'text-nature',    bg: 'bg-nature-light',   Icon: Mountain },
+  レジャー:{ color: 'text-nature',    bg: 'bg-nature-light',   Icon: Snowflake },
   移動:    { color: 'text-slate-500', bg: 'bg-slate-100',      Icon: Car },
   その他:  { color: 'text-slate-400', bg: 'bg-slate-50',       Icon: Tag },
 };
@@ -61,8 +61,10 @@ export default function PlaceCard({
                 </span>
               )}
               <span className="text-[10px] text-slate-400 leading-none select-none">·</span>
-              <cfg.Icon size={14} className={`flex-shrink-0 ${cfg.color}`} />
-              <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
+              <span className={`inline-flex items-center gap-[3px]`}>
+                <cfg.Icon size={13} className={`flex-shrink-0 ${cfg.color}`} />
+                <span className={`text-[11px] font-semibold leading-none ${cfg.color}`}>{type}</span>
+              </span>
             </div>
             {item.duration && (
               <span className="text-[11px] text-slate-400 flex-shrink-0">{item.duration}</span>
