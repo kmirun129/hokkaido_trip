@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { ImagePlus, X, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { getClient } from "@/lib/supabase";
 import { compressImage } from "@/lib/compress";
 import { PlacePhoto } from "@/types";
@@ -170,9 +171,9 @@ export default function PhotoGallery({ tripItemId, editable, onCountChange }: Pr
                 {editable && !showOverlay && (
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(photo); }}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-500 text-white text-sm flex items-center justify-center transition-colors"
+                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-red-500 text-white flex items-center justify-center transition-colors"
                     title="削除"
-                  >×</button>
+                  ><X size={13} /></button>
                 )}
               </div>
             );
@@ -188,9 +189,9 @@ export default function PhotoGallery({ tripItemId, editable, onCountChange }: Pr
           <button
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs hover:border-sky hover:text-sky transition-colors disabled:opacity-50"
+            className="w-full py-2 rounded-xl border-2 border-dashed border-slate-200 text-slate-400 text-xs hover:border-sky hover:text-sky transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
           >
-            {uploading ? "アップロード中..." : "📷 写真を追加"}
+            {uploading ? "アップロード中..." : (<><ImagePlus size={13} /> 写真を追加</>)}
           </button>
         </div>
       )}
@@ -211,18 +212,18 @@ export default function PhotoGallery({ tripItemId, editable, onCountChange }: Pr
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); setLightbox((lightbox - 1 + photos.length) % photos.length); }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white text-xl"
-              >◀</button>
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center"
+              ><ChevronLeft size={22} /></button>
               <button
                 onClick={(e) => { e.stopPropagation(); setLightbox((lightbox + 1) % photos.length); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white text-xl"
-              >▶</button>
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center"
+              ><ChevronRight size={22} /></button>
             </>
           )}
           <button
-            className="absolute top-5 right-5 text-white text-2xl leading-none w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
+            className="absolute top-5 right-5 text-white w-10 h-10 flex items-center justify-center rounded-full bg-black/40 hover:bg-black/60"
             onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
-          >✕</button>
+          ><X size={20} /></button>
           <div className="absolute bottom-5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 text-white text-xs">
             {lightbox + 1} / {photos.length}
           </div>
@@ -235,9 +236,9 @@ export default function PhotoGallery({ tripItemId, editable, onCountChange }: Pr
               >← 順序</button>
               <button
                 onClick={(e) => { e.stopPropagation(); handleDelete(photos[lightbox]); }}
-                className="w-9 h-9 rounded-full bg-red-500/80 hover:bg-red-500 text-white text-sm flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center"
                 title="削除"
-              >🗑</button>
+              ><Trash2 size={14} /></button>
               <button
                 onClick={(e) => { e.stopPropagation(); swap(lightbox, lightbox + 1); }}
                 disabled={lightbox === photos.length - 1}

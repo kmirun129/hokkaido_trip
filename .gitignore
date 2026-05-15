@@ -41,3 +41,4 @@ yarn-error.log*
 
 # local dev tools
 .claude/
+.claude/settings.local.json

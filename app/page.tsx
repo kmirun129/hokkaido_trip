@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Plus, Car } from "lucide-react";
 import Header from "@/components/Header";
 import DayTabs from "@/components/DayTabs";
 import DayTheme from "@/components/DayTheme";
@@ -119,9 +120,9 @@ export default function Home() {
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
-                  className="px-5 py-2.5 bg-sky text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-sky/90 transition-colors"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-sky text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-sky/90 transition-colors"
                 >
-                  ＋ 場所を追加
+                  <Plus size={15} /> 場所を追加
                 </button>
               </div>
             )}
@@ -166,13 +167,13 @@ export default function Home() {
             onClick={() => setModal({ type: 'add-transport', day: activeDay, orderIndex: nextOrder() })}
             className="flex items-center gap-2 px-4 py-3 bg-white text-slate-600 rounded-2xl shadow-lg border border-slate-100 text-sm font-medium hover:bg-slate-50 transition-colors"
           >
-            🚗 移動を追加
+            <Car size={16} /> 移動を追加
           </button>
           <button
             onClick={() => setModal({ type: 'add-place', day: activeDay, orderIndex: nextOrder() })}
             className="flex items-center gap-2 px-5 py-3 bg-sky text-white rounded-2xl shadow-lg text-sm font-semibold hover:bg-sky/90 transition-colors"
           >
-            ＋ 場所を追加
+            <Plus size={16} /> 場所を追加
           </button>
         </div>
       )}

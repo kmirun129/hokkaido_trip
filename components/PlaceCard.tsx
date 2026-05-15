@@ -4,6 +4,7 @@ import { TripItem, PlaceType, SubTask } from "@/types";
 import { useMode } from "@/lib/mode";
 import { useSettings } from "@/lib/settings";
 import { parseHours, formatHoursText, getWeekday } from "@/lib/hours";
+import { MapPin, Pencil, Trash2, ChevronUp, ChevronDown, Clock } from "lucide-react";
 import PhotoGallery from "./PhotoGallery";
 
 const TYPE_CONFIG: Record<PlaceType, { color: string; bg: string }> = {
@@ -33,13 +34,9 @@ export default function PlaceCard({
   const type = (item.place_type ?? 'その他') as PlaceType;
   const cfg = TYPE_CONFIG[type];
 
-  // 営業時間：構造化JSON or 平文テキスト
   const hoursData = parseHours(item.business_hours);
   const weekday = settings.start_date ? getWeekday(settings.start_date, item.day) : undefined;
-  const hoursText = hoursData
-    ? formatHoursText(hoursData, weekday)
-    : item.business_hours;
-
+  const hoursText = hoursData ? formatHoursText(hoursData, weekday) : item.business_hours;
   const isClosed = hoursData && weekday && hoursData.closed.includes(weekday);
 
   const subTasks = (item.sub_items ?? []).filter((t: SubTask) => t.content.trim());
@@ -51,46 +48,53 @@ export default function PlaceCard({
       id={`place-${item.id}`}
       className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden scroll-mt-20"
     >
-      {/* ── 上部: メタ + 時刻 + 名前 + マップ右端固定 ── */}
+      {/* ── ヘッダー: 時刻 + カテゴリ → 場所名 ── */}
       <div className="px-4 pt-4 pb-3">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            {/* メタ行（カテゴリ・所要時間） */}
-            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-              <span className={`text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>
-                {type}
-              </span>
-              {item.duration && (
-                <span className="text-[11px] text-slate-400">⏱ {item.duration}</span>
-              )}
-            </div>
-            {/* 時刻 + 場所名（大きく目立たせる） */}
-            <div className="flex items-baseline gap-2.5 flex-wrap">
+            <div className="flex items-baseline gap-2 flex-wrap mb-1">
               {item.time && (
-                <span className="text-xl font-bold tabular-nums text-sky leading-none">
+                <span className={`text-[15px] font-semibold tabular-nums leading-none ${cfg.color}`}>
                   {item.time}
                 </span>
               )}
-              <h3 className="text-lg font-bold text-slate-800 leading-tight break-words">
-                {item.name ?? '（名称未設定）'}
-              </h3>
+              <span className={`text-[12px] font-medium leading-none ${cfg.color}`}>
+                {type}
+              </span>
+              {item.duration && (
+                <>
+                  <span className="text-slate-300 text-[11px] leading-none">·</span>
+                  <span className="text-[11px] text-slate-400 leading-none">{item.duration}</span>
+                </>
+              )}
             </div>
+            <h3 className="text-xl font-bold text-slate-800 leading-tight break-words">
+              {item.name ?? '（名称未設定）'}
+            </h3>
           </div>
 
-          {/* 右端固定: プレビュー時はMapボタン / 編集時は編集ボタン群 */}
+          {/* 右端: Mapリンク or 編集ボタン群（ゴーストスタイル） */}
           {isEdit ? (
-            <div className="flex flex-col gap-1 flex-shrink-0">
-              <div className="flex gap-1">
+            <div className="flex flex-col gap-0.5 flex-shrink-0">
+              <div className="flex gap-0.5">
                 <button onClick={onMoveUp} disabled={isFirst}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▲</button>
+                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
+                  <ChevronUp size={15} />
+                </button>
                 <button onClick={onMoveDown} disabled={isLast}
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 disabled:opacity-30 flex items-center justify-center text-xs transition-colors">▼</button>
+                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 disabled:opacity-30 flex items-center justify-center transition-colors">
+                  <ChevronDown size={15} />
+                </button>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5">
                 <button onClick={onEdit}
-                  className="w-7 h-7 rounded-lg bg-sky-light hover:bg-sky/20 flex items-center justify-center text-xs transition-colors">✏️</button>
+                  className="w-7 h-7 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-50 flex items-center justify-center transition-colors">
+                  <Pencil size={13} />
+                </button>
                 <button onClick={onDelete}
-                  className="w-7 h-7 rounded-lg bg-red-50 hover:bg-red-100 flex items-center justify-center text-xs transition-colors">🗑️</button>
+                  className="w-7 h-7 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors">
+                  <Trash2 size={13} />
+                </button>
               </div>
             </div>
           ) : hasMap ? (
@@ -98,48 +102,56 @@ export default function PlaceCard({
               href={item.maps_url!}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold text-sky bg-sky-light px-2.5 py-1.5 rounded-full hover:bg-sky hover:text-white transition-colors"
+              className={`flex-shrink-0 inline-flex items-center gap-1 text-[12px] font-medium ${cfg.color} hover:opacity-70 transition-opacity`}
             >
-              📍 Map
+              <MapPin size={13} />
+              <span>Map</span>
             </a>
           ) : null}
         </div>
       </div>
 
-      {/* ── 中央: 写真ギャラリー（左右12px内側、上下12px余白、角丸コンテナ） ── */}
+      {/* ── 写真 ── */}
       <div className="px-3 mt-3">
         <PhotoGallery tripItemId={item.id} editable={isEdit} />
       </div>
 
-      {/* ── 下部: 詳細情報 ── */}
+      {/* ── 詳細 ── */}
       {hasSubInfo && (
-        <div className="px-4 pb-3 pt-3 mt-1 space-y-2 border-t border-slate-50">
+        <div className="px-4 pb-4 pt-3 mt-1 space-y-3 border-t border-slate-50">
           {item.description && (
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</p>
+            <p className="text-[13.5px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+              {item.description}
+            </p>
           )}
+
           {hoursText && (
-            <div className={`flex items-start gap-2 text-sm ${isClosed ? 'text-red-500' : 'text-slate-500'}`}>
-              <span className="text-base flex-shrink-0">🕐</span>
+            <div className={`flex items-start gap-2 text-[13px] ${isClosed ? 'text-red-500' : 'text-slate-500'}`}>
+              <Clock size={13} className="flex-shrink-0 mt-0.5" />
               <span className="leading-relaxed">{hoursText}</span>
             </div>
           )}
+
           {item.memo && (
-            <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 rounded-xl px-3 py-2">
-              <span className="text-base flex-shrink-0">📝</span>
-              <span className="leading-relaxed whitespace-pre-wrap">{item.memo}</span>
+            <div className="border-l-2 border-slate-200 pl-3">
+              <p className="text-[13px] text-slate-600 leading-relaxed whitespace-pre-wrap">
+                {item.memo}
+              </p>
             </div>
           )}
+
           {subTasks.length > 0 && (
-            <div className="bg-slate-50 rounded-xl px-3 py-2.5 space-y-1.5">
+            <div className="space-y-1.5 pt-0.5">
               {subTasks.map((task: SubTask) => (
-                <div key={task.id} className="flex items-center gap-2 text-sm text-slate-700">
-                  <span className="text-slate-300 flex-shrink-0">•</span>
-                  {task.showTime && task.time && (
-                    <span className="text-[11px] font-semibold tabular-nums text-sky bg-sky/10 px-1.5 py-0.5 rounded-md flex-shrink-0">
+                <div key={task.id} className="flex items-baseline gap-2.5 text-[13px]">
+                  {task.showTime && task.time ? (
+                    <span className={`tabular-nums font-semibold flex-shrink-0 w-12 ${cfg.color}`}>
                       {task.time}
                     </span>
+                  ) : (
+                    <span className="flex-shrink-0 w-12" />
                   )}
-                  <span className="leading-snug">{task.content}</span>
+                  <span className="text-slate-700 leading-snug">{task.content}</span>
                 </div>
               ))}
             </div>
@@ -147,12 +159,13 @@ export default function PlaceCard({
         </div>
       )}
 
-      {/* 編集モードのみ: 下部にマップリンク（編集ボタンと干渉するため） */}
+      {/* 編集モード時の Map リンク */}
       {isEdit && hasMap && (
         <div className="px-4 pb-4">
           <a href={item.maps_url!} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-sky font-semibold hover:underline">
-            <span>📍</span> Googleマップで開く
+            className={`inline-flex items-center gap-1.5 text-xs ${cfg.color} font-medium hover:opacity-70 transition-opacity`}>
+            <MapPin size={12} />
+            <span>Googleマップで開く</span>
           </a>
         </div>
       )}
